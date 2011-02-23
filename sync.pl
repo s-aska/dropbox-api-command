@@ -18,6 +18,7 @@ my $dir    = $opts{t};
 warn "enable dry mode" if $dry;
 warn "!!! enable delete mode !!!" if $delete;
 die "missing dest dir $dir" if !-d $dir;
+$dir = dir($dir)->absolute->resolve;
 my $cache_file = catfile( dirname(__FILE__), '.dropbox.cache' );
 my $cache = -f $cache_file ? decode_json(file($cache_file)->slurp) : {};
 die $@ if $@;
@@ -77,26 +78,24 @@ my $fh = file($cache_file)->openw;
 $fh->print(encode_json($files));
 $fh->close;
 exit if not $delete;
-$dir = dir($dir);
-my $dir_abs = $dir->absolute;
 $dir->recurse(
     preorder => 0,
     depthfirst => 1,
     callback => sub {
         my $file = shift;
         my $path = $file->absolute;
-        $path=~s|$dir_abs/?||;
+        $path=~s|$dir/?||;
         return if not length $path;
         #warn $path;
         if (not exists $files->{$path}) {
             if (-f $file) {
-                warn "unlink $file";
+                warn "unlink " . $file;
                 return if $dry;
                 unlink $file;
             } elsif (-d $file) {
-                warn "rmtree $file";
+                warn "rmtree " . $file;
                 return if $dry;
-                dir($file)->rmtree;
+                $file->rmtree;
             }
         }
     }
