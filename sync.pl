@@ -53,7 +53,7 @@ $find = sub {
                 warn "download $content->{path}";
                 my $file = file($dir, $l_path);
                 $file->dir->mkpath if !-d $file->dir;
-                $file->openw->close;
+                $box->getfile(substr($content->{path}, 1), $file->absolute->stringify);
             }
         }
     }
