@@ -6,9 +6,15 @@ use File::Spec::Functions;
 use File::Basename qw(dirname);
 use Net::Dropbox::API;
 use Path::Class;
+use Getopt::Std;
 
-my $base  = shift;
-my $dir   = shift || '.dropbox';
+my %opts;
+getopt('dft', \%opts);
+
+my $delete = $opts{d};
+my $base   = $opts{f};
+my $dir    = $opts{t};
+die "missing dest dir $dir" if !-d $dir;
 my $cache_file = catfile( dirname(__FILE__), '.dropbox.cache' );
 my $cache = -f $cache_file ? decode_json(file($cache_file)->slurp) : {};
 die $@ if $@;
@@ -65,6 +71,7 @@ $find->($base);
 my $fh = file($cache_file)->openw;
 $fh->print(encode_json($files));
 $fh->close;
+exit if not $delete;
 $dir = dir($dir);
 my $dir_abs = $dir->absolute;
 $dir->recurse(
