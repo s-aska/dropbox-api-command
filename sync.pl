@@ -9,11 +9,14 @@ use Path::Class;
 use Getopt::Std;
 
 my %opts;
-getopt('dft', \%opts);
+getopts('ndf:t:', \%opts);
 
+my $dry    = $opts{n};
 my $delete = $opts{d};
 my $base   = $opts{f};
 my $dir    = $opts{t};
+warn "enable dry mode" if $dry;
+warn "!!! enable delete mode !!!" if $delete;
 die "missing dest dir $dir" if !-d $dir;
 my $cache_file = catfile( dirname(__FILE__), '.dropbox.cache' );
 my $cache = -f $cache_file ? decode_json(file($cache_file)->slurp) : {};
@@ -46,6 +49,7 @@ $find = sub {
             my $cur = dir($dir, $l_path);
             if (!-d $cur) {
                 warn "mkpath $cur";
+                next if $dry;
                 $cur->mkpath;
             }
         } else {
@@ -57,6 +61,7 @@ $find = sub {
                 warn "skip $content->{path}";
             } else {
                 warn "download $content->{path}";
+                next if $dry;
                 my $file = file($dir, $l_path);
                 $file->dir->mkpath if !-d $file->dir;
                 $box->getfile(substr($content->{path}, 1), $file->absolute->stringify);
@@ -86,9 +91,11 @@ $dir->recurse(
         if (not exists $files->{$path}) {
             if (-f $file) {
                 warn "unlink $file";
+                return if $dry;
                 unlink $file;
             } elsif (-d $file) {
                 warn "rmtree $file";
+                return if $dry;
                 dir($file)->rmtree;
             }
         }

@@ -43,6 +43,9 @@ Dropbox上のコンテンツとローカルコンテンツを同期するスク�
     perl sync.pl -f DROPBOX_PATH -t LOCAL_PATH
 
     # Download and Delete
-    perl sync.pl -d 1 -f DROPBOX_PATH -t LOCAL_PATH
+    perl sync.pl -d -f DROPBOX_PATH -t LOCAL_PATH
+
+    # dry run
+    perl sync.pl -n -d -f DROPBOX_PATH -t LOCAL_PATH
 
     # Example: perl sync.pl /product/dropbox-get /tmp/dropbox-get
