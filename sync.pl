@@ -1,6 +1,7 @@
 #!perl
 
 use strict;
+use Encode;
 use JSON::XS;
 use File::Spec::Functions;
 use File::Basename qw(dirname);
@@ -74,9 +75,11 @@ $find = sub {
     }
 };
 $find->($base);
-my $fh = file($cache_file)->openw;
-$fh->print(encode_json($files));
-$fh->close;
+if (not $dry) {
+    my $fh = file($cache_file)->openw;
+    $fh->print(encode_json($files));
+    $fh->close;
+}
 exit if not $delete;
 $dir->recurse(
     preorder => 0,
@@ -87,7 +90,7 @@ $dir->recurse(
         $path=~s|$dir/?||;
         return if not length $path;
         #warn $path;
-        if (not exists $files->{$path}) {
+        if (not exists $files->{decode('utf8', $path)}) {
             if (-f $file) {
                 warn "unlink " . $file;
                 return if $dry;
