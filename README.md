@@ -126,3 +126,6 @@ dropbox-api -vnd sync DROPBOX_PATH LOCAL_PATH
     skip options.html
     skip popup.html
     skip reset.css
+
+## License
+Released under the [MIT license](http://creativecommons.org/licenses/MIT/).
