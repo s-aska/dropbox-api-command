@@ -85,6 +85,8 @@ sub _find {
 
 sub sync {
     $local_base = dir(abs_path($local_base));
+    
+    print "!! enable dry run !!\n" if $dry;
     print "remote_base: $remote_base\n" if $verbose;
     print "local_base: $local_base\n" if $verbose;
     

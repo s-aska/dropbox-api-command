@@ -27,11 +27,10 @@ Dropbox API wrap command
     OK?
     success!
 
-## Run sync.pl
+## file list
 
-    # ls
-    perl dropbox-api.pl ls DROPBOX_PATH
-    
+`perl dropbox-api.pl ls DROPBOX_PATH`
+
     > perl dropbox-api.pl ls /product
      dir          - Thu, 24 Feb 2011 06:58:00 +0000 /product/chrome-extentions
      dir          - Thu, 24 Feb 2011 07:30:02 +0000 /product/dot-files
@@ -40,10 +39,11 @@ Dropbox API wrap command
      dir          - Thu, 24 Feb 2011 03:49:03 +0000 /product/markdown-binder-plack
      dir          - Fri, 25 Feb 2011 11:11:42 +0000 /product/MasterSpark
      dir          - Tue, 26 Oct 2010 05:14:21 +0000 /product/mime-parser-delux
-    
-    # find
-    perl dropbox-api.pl find DROPBOX_PATH
-    
+
+## file find
+
+`perl dropbox-api.pl find DROPBOX_PATH`
+
     > perl dropbox-api.pl find /product/chrome-extentions/google-tasks-checker-plus
     /product/chrome-extentions/google-tasks-checker-plus/README.md
     /product/chrome-extentions/google-tasks-checker-plus/src
@@ -59,17 +59,37 @@ Dropbox API wrap command
     /product/chrome-extentions/google-tasks-checker-plus/src/popup.html
     /product/chrome-extentions/google-tasks-checker-plus/src/reset.css
 
-    # sync download
-    perl dropbox-api.pl sync DROPBOX_PATH LOCAL_PATH
+## file sync
 
-    # delete option ( local only file delete )
-    perl dropbox-api.pl -d sync DROPBOX_PATH LOCAL_PATH
+### sync download
+`perl dropbox-api.pl sync DROPBOX_PATH LOCAL_PATH`
 
-    # dry run option ( safety )
-    perl dropbox-api.pl -nd sync DROPBOX_PATH LOCAL_PATH
+    > perl dropbox-api.pl sync /product/chrome-extentions/google-tasks-checker-plus/src /tmp/product
+    download /private/tmp/product/external.png
+    download /private/tmp/product/icon-32.png
+    download /private/tmp/product/icon-128.png
 
-    # verbose option
-    perl dropbox-api.pl -vnd sync DROPBOX_PATH LOCAL_PATH
+### delete option ( local only file delete )
+`perl dropbox-api.pl -d sync DROPBOX_PATH LOCAL_PATH`
+
+    > perl dropbox-api.pl -d sync /product/chrome-extentions/google-tasks-checker-plus/src /tmp/product
+    download /private/tmp/product/external.png
+    download /private/tmp/product/icon-32.png
+    download /private/tmp/product/icon-128.png
+    remove background.html.tmp
+
+### dry run option ( safety )
+`perl dropbox-api.pl -nd sync DROPBOX_PATH LOCAL_PATH`
+
+    > perl dropbox-api.pl -d sync /product/chrome-extentions/google-tasks-checker-plus/src /tmp/product
+    !! enable dry run !!
+    download /private/tmp/product/external.png
+    download /private/tmp/product/icon-32.png
+    download /private/tmp/product/icon-128.png
+    remove background.html.tmp
+
+### verbose option
+`perl dropbox-api.pl -vnd sync DROPBOX_PATH LOCAL_PATH`
 
     > perl dropbox-api.pl -vnd sync /product/chrome-extentions/google-tasks-checker-plus/src /tmp/product
     remote_base: /product/chrome-extentions/google-tasks-checker-plus/src
