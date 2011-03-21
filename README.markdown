@@ -1,15 +1,15 @@
 # Dropbox Sync
 
-Dropbox上のコンテンツとローカルコンテンツを同期するスクリプトです。 `rsync -rz --delete Dropbox localhost`
+Dropbox API wrap command
 
-- Dropbox側からローカルにのみ転送します、アップロードは行いません。
-- ローカルにのみ存在するファイルを削除するオプションがあります。
-- DropboxへのAPI登録、OAUTHの認証手順は各自行って下さい。
-- スクリプトのバグで誤ってファイルが消えてしまっても私は責任を負いきれません。
+- ls   ... dropbox's file list view
+- find ... dropbox's file recursive list view
+- sync ... dropbox's file sync to local ( download only )
+- support delete option. ( rsync --delete option like. )
 
 ## require module
 
-    cpanm JSON::XS Path::Class Net::Dropbox::API
+    cpanm JSON Path::Class Net::Dropbox::API DateTime::Format::Strptime
 
 ## Get API Key and Secret
 
@@ -17,35 +17,82 @@ Dropbox上のコンテンツとローカルコンテンツを同期するスク�
 
     My Apps => Create an App
 
-    set config.pl
-        key => API Key
-        secret => API Secret
-
 ## Get Access Token and Access Secret
 
-    > perl login.pl
-    URL: http://api.dropbox.com/0/oauth/authorize?oauth_token=vnyvq29cdtafk47&oauth_callback=
+    > perl dropbox-setup.pl
+    Please Input API Key: ***************
+    Please Input API Secret: ***************
+    URL: http://api.dropbox.com/0/oauth/authorize?oauth_token=***************&oauth_callback=
     Please Access URL and AUTH
-    # Open Your Browser and Access URL
-    # Display Success
     OK?
-
-    access_token: **************
-    access_secret: **************
-
-    set config.pl
-        access_token => access_token
-        access_token => access_secret
+    success!
 
 ## Run sync.pl
 
-    # Download Only
-    perl sync.pl -f DROPBOX_PATH -t LOCAL_PATH
+    # ls
+    perl dropbox-api.pl ls DROPBOX_PATH
+    
+    > perl dropbox-api.pl ls /product
+     dir          - Thu, 24 Feb 2011 06:58:00 +0000 /product/chrome-extentions
+     dir          - Thu, 24 Feb 2011 07:30:02 +0000 /product/dot-files
+     dir          - Wed, 23 Feb 2011 05:51:05 +0000 /product/dropbox-sync-down
+    file    287.7KB Sun, 26 Dec 2010 21:55:59 +0000 /product/hoge.tar.gz
+     dir          - Thu, 24 Feb 2011 03:49:03 +0000 /product/markdown-binder-plack
+     dir          - Fri, 25 Feb 2011 11:11:42 +0000 /product/MasterSpark
+     dir          - Tue, 26 Oct 2010 05:14:21 +0000 /product/mime-parser-delux
+    
+    # find
+    perl dropbox-api.pl find DROPBOX_PATH
+    
+    > perl dropbox-api.pl find /product/chrome-extentions/google-tasks-checker-plus
+    /product/chrome-extentions/google-tasks-checker-plus/README.md
+    /product/chrome-extentions/google-tasks-checker-plus/src
+    /product/chrome-extentions/google-tasks-checker-plus/src/background.html
+    /product/chrome-extentions/google-tasks-checker-plus/src/external.png
+    /product/chrome-extentions/google-tasks-checker-plus/src/icon-32.png
+    /product/chrome-extentions/google-tasks-checker-plus/src/icon-128.png
+    /product/chrome-extentions/google-tasks-checker-plus/src/icon.gif
+    /product/chrome-extentions/google-tasks-checker-plus/src/jquery-1.4.2.min.js
+    /product/chrome-extentions/google-tasks-checker-plus/src/main.js
+    /product/chrome-extentions/google-tasks-checker-plus/src/manifest.json
+    /product/chrome-extentions/google-tasks-checker-plus/src/options.html
+    /product/chrome-extentions/google-tasks-checker-plus/src/popup.html
+    /product/chrome-extentions/google-tasks-checker-plus/src/reset.css
 
-    # Download and Delete
-    perl sync.pl -d -f DROPBOX_PATH -t LOCAL_PATH
+    # sync download
+    perl dropbox-api.pl sync DROPBOX_PATH LOCAL_PATH
 
-    # dry run
-    perl sync.pl -n -d -f DROPBOX_PATH -t LOCAL_PATH
+    # delete option ( local only file delete )
+    perl dropbox-api.pl -d sync DROPBOX_PATH LOCAL_PATH
 
-    # Example: perl sync.pl /product/dropbox-get /tmp/dropbox-get
+    # dry run option ( safety )
+    perl dropbox-api.pl -nd sync DROPBOX_PATH LOCAL_PATH
+
+    # verbose option
+    perl dropbox-api.pl -vnd sync DROPBOX_PATH LOCAL_PATH
+
+    > perl dropbox-api.pl -vnd sync /product/chrome-extentions/google-tasks-checker-plus/src /tmp/product
+    remote_base: /product/chrome-extentions/google-tasks-checker-plus/src
+    local_base: /private/tmp/product
+    ** download **
+    skip background.html
+    download /private/tmp/product/external.png
+    download /private/tmp/product/icon-32.png
+    download /private/tmp/product/icon-128.png
+    skip icon.gif
+    skip jquery-1.4.2.min.js
+    skip main.js
+    skip manifest.json
+    skip options.html
+    skip popup.html
+    skip reset.css
+    ** delete **
+    skip background.html
+    remove background.html.tmp
+    skip icon.gif
+    skip jquery-1.4.2.min.js
+    skip main.js
+    skip manifest.json
+    skip options.html
+    skip popup.html
+    skip reset.css
