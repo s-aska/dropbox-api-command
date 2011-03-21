@@ -2,10 +2,12 @@
 
 Dropbox API Wrapper Command
 
+## Commands
 - ls   ... dropbox file list view
 - find ... dropbox file recursive list view
 - sync ... dropbox file sync to local ( download only )
-- support delete option. ( rsync --delete option like. )
+  - delete option. ( rsync --delete option like. )
+  - dry-run option.
 
 ## Install
 
@@ -19,7 +21,6 @@ Dropbox API Wrapper Command
 ### Get API Key and Secret
 
     https://www.dropbox.com/developers
-
     My Apps => Create an App
 
 ### Get Access Token and Access Secret
@@ -66,7 +67,7 @@ dropbox-api find DROPBOX_PATH
 
 ## file sync
 
-### sync download
+### download
 
 dropbox-api sync DROPBOX_PATH LOCAL_PATH
 
@@ -75,7 +76,7 @@ dropbox-api sync DROPBOX_PATH LOCAL_PATH
     download /private/tmp/product/icon-32.png
     download /private/tmp/product/icon-128.png
 
-### delete option ( local only file delete )
+### delete option ( -d )
 
 dropbox-api -d sync DROPBOX_PATH LOCAL_PATH
 
@@ -85,7 +86,7 @@ dropbox-api -d sync DROPBOX_PATH LOCAL_PATH
     download /private/tmp/product/icon-128.png
     remove background.html.tmp
 
-### dry run option ( safety )
+### dry run option ( -n )
 
 dropbox-api -nd sync DROPBOX_PATH LOCAL_PATH
 
@@ -96,7 +97,7 @@ dropbox-api -nd sync DROPBOX_PATH LOCAL_PATH
     download /private/tmp/product/icon-128.png
     remove background.html.tmp
 
-### verbose option
+### verbose option ( -v )
 
 dropbox-api -vnd sync DROPBOX_PATH LOCAL_PATH
 
