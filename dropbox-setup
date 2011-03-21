@@ -21,17 +21,21 @@ $config->{secret} = $secret;
 $config->{callback_url} = '';
 my $box = Net::Dropbox::API->new($config);
 my $login_link = $box->login;
+die $box->error if $box->error;
 print "URL: $login_link\n";
 print "Please Access URL and AUTH\n";
 print "OK?";
 <STDIN>;
 $box->auth;
+die $box->error if $box->error;
 $config->{access_token} = $box->access_token;
 $config->{access_secret} = $box->access_secret;
 print "success! try\n";
-print "> perl dropbox-api.pl ls\n";
-print "> perl dropbox-api.pl find /\n";
+print "> dropbox-api ls\n";
+print "> dropbox-api find /\n";
 
 $config_file->openw->print(encode_json($config));
+
+chmod 0600, $config_file;
 
 exit(0);

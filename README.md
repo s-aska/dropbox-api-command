@@ -9,19 +9,22 @@ Dropbox API Wrapper Command
 
 ## Install
 
-    git clone git@github.com:s-aska/dropbox-api-command.git
     cpanm JSON Path::Class Net::Dropbox::API DateTime::Format::Strptime
-    ln -s ./dropbox-api ~/bin/dropbox-api
+    
+    git clone git@github.com:s-aska/dropbox-api-command.git
+    cd dropbox-api-command
+    cp dropbox-api ~/bin/dropbox-api
+    chmod +x ~/bin/dropbox-api
 
-## Get API Key and Secret
+### Get API Key and Secret
 
     https://www.dropbox.com/developers
 
     My Apps => Create an App
 
-## Get Access Token and Access Secret
+### Get Access Token and Access Secret
 
-    > ./dropbox-setup
+    > perl dropbox-setup
     Please Input API Key: ***************
     Please Input API Secret: ***************
     URL: http://api.dropbox.com/0/oauth/authorize?oauth_token=***************&oauth_callback=
