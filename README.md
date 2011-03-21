@@ -1,15 +1,17 @@
-# Dropbox Sync
+# Dropbox API Command
 
-Dropbox API wrap command
+Dropbox API Wrapper Command
 
-- ls   ... dropbox's file list view
-- find ... dropbox's file recursive list view
-- sync ... dropbox's file sync to local ( download only )
+- ls   ... dropbox file list view
+- find ... dropbox file recursive list view
+- sync ... dropbox file sync to local ( download only )
 - support delete option. ( rsync --delete option like. )
 
-## require module
+## Install
 
+    git clone git@github.com:s-aska/dropbox-api-command.git
     cpanm JSON Path::Class Net::Dropbox::API DateTime::Format::Strptime
+    ln -s ./dropbox-api ~/bin/dropbox-api
 
 ## Get API Key and Secret
 
@@ -19,7 +21,7 @@ Dropbox API wrap command
 
 ## Get Access Token and Access Secret
 
-    > perl dropbox-setup.pl
+    > ./dropbox-setup
     Please Input API Key: ***************
     Please Input API Secret: ***************
     URL: http://api.dropbox.com/0/oauth/authorize?oauth_token=***************&oauth_callback=
@@ -29,9 +31,9 @@ Dropbox API wrap command
 
 ## file list
 
-`perl dropbox-api.pl ls DROPBOX_PATH`
+dropbox-api ls DROPBOX_PATH
 
-    > perl dropbox-api.pl ls /product
+    > dropbox-api ls /product
      dir          - Thu, 24 Feb 2011 06:58:00 +0000 /product/chrome-extentions
      dir          - Thu, 24 Feb 2011 07:30:02 +0000 /product/dot-files
      dir          - Wed, 23 Feb 2011 05:51:05 +0000 /product/dropbox-sync-down
@@ -42,9 +44,9 @@ Dropbox API wrap command
 
 ## file find
 
-`perl dropbox-api.pl find DROPBOX_PATH`
+dropbox-api find DROPBOX_PATH
 
-    > perl dropbox-api.pl find /product/chrome-extentions/google-tasks-checker-plus
+    > dropbox-api find /product/chrome-extentions/google-tasks-checker-plus
     /product/chrome-extentions/google-tasks-checker-plus/README.md
     /product/chrome-extentions/google-tasks-checker-plus/src
     /product/chrome-extentions/google-tasks-checker-plus/src/background.html
@@ -62,26 +64,29 @@ Dropbox API wrap command
 ## file sync
 
 ### sync download
-`perl dropbox-api.pl sync DROPBOX_PATH LOCAL_PATH`
 
-    > perl dropbox-api.pl sync /product/chrome-extentions/google-tasks-checker-plus/src /tmp/product
+dropbox-api sync DROPBOX_PATH LOCAL_PATH
+
+    > dropbox-api sync /product/chrome-extentions/google-tasks-checker-plus/src /tmp/product
     download /private/tmp/product/external.png
     download /private/tmp/product/icon-32.png
     download /private/tmp/product/icon-128.png
 
 ### delete option ( local only file delete )
-`perl dropbox-api.pl -d sync DROPBOX_PATH LOCAL_PATH`
 
-    > perl dropbox-api.pl -d sync /product/chrome-extentions/google-tasks-checker-plus/src /tmp/product
+dropbox-api -d sync DROPBOX_PATH LOCAL_PATH
+
+    > dropbox-api -d sync /product/chrome-extentions/google-tasks-checker-plus/src /tmp/product
     download /private/tmp/product/external.png
     download /private/tmp/product/icon-32.png
     download /private/tmp/product/icon-128.png
     remove background.html.tmp
 
 ### dry run option ( safety )
-`perl dropbox-api.pl -nd sync DROPBOX_PATH LOCAL_PATH`
 
-    > perl dropbox-api.pl -d sync /product/chrome-extentions/google-tasks-checker-plus/src /tmp/product
+dropbox-api -nd sync DROPBOX_PATH LOCAL_PATH
+
+    > dropbox-api -d sync /product/chrome-extentions/google-tasks-checker-plus/src /tmp/product
     !! enable dry run !!
     download /private/tmp/product/external.png
     download /private/tmp/product/icon-32.png
@@ -89,9 +94,10 @@ Dropbox API wrap command
     remove background.html.tmp
 
 ### verbose option
-`perl dropbox-api.pl -vnd sync DROPBOX_PATH LOCAL_PATH`
 
-    > perl dropbox-api.pl -vnd sync /product/chrome-extentions/google-tasks-checker-plus/src /tmp/product
+dropbox-api -vnd sync DROPBOX_PATH LOCAL_PATH
+
+    > dropbox-api -vnd sync /product/chrome-extentions/google-tasks-checker-plus/src /tmp/product
     remote_base: /product/chrome-extentions/google-tasks-checker-plus/src
     local_base: /private/tmp/product
     ** download **

@@ -1,4 +1,4 @@
-#!perl
+#!/usr/bin/env perl
 
 use strict;
 use Cwd 'abs_path';
@@ -25,7 +25,7 @@ my ($mode, $remote_base, $local_base) = @ARGV;
 $remote_base = '/' . $remote_base if $remote_base!~m|^/|;
 
 # connect dropbox
-my $config_file = file( dirname(__FILE__), $ENV{'CONFIG_PATH'} || 'dropbox-config.json' );
+my $config_file = file( $ENV{'DROPBOX_CONF'} || ($ENV{'HOME'}, '.dropbox-api-config') );
 my $config = decode_json($config_file->slurp);
 $config->{key} or die 'please set config key.';
 $config->{secret} or die 'please set config secret.';
