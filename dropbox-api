@@ -5,12 +5,14 @@ use Cwd 'abs_path';
 use Data::Dumper;
 use DateTime;
 use DateTime::Format::Strptime;
-use File::Basename qw(dirname);
-use File::Spec::Functions qw(abs2rel);
+use Encode;
+use File::Basename qw(dirname basename);
+use File::Spec::Functions qw(abs2rel catfile);
 use Getopt::Std;
 use JSON;
 use Net::Dropbox::API;
 use Path::Class;
+use URI::Escape;
 
 my $config_file = file( $ENV{'DROPBOX_CONF'} || ($ENV{'HOME'}, '.dropbox-api-config') );
 
@@ -179,7 +181,7 @@ sub copy {
     my ($src, $dst) = @_;
     $src=~s|^/||;
     $dst=~s|^/||;
-    my $res = $box->copy($src, $dst);
+    my $res = $box->copy(decode_utf8($src), decode_utf8($dst));
     print Dumper($res), "\n" if $verbose;
 }
 
@@ -187,29 +189,30 @@ sub move {
     my ($src, $dst) = @_;
     $src=~s|^/||;
     $dst=~s|^/||;
-    my $res = $box->move($src, $dst);
+    my $res = $box->move(decode_utf8($src), decode_utf8($dst));
     print Dumper($res), "\n" if $verbose;
 }
 
 sub mkdir {
     my ($dir) = @_;
     $dir=~s|^/||;
-    my $res = $box->mkdir($dir);
+    my $res = $box->mkdir(decode_utf8($dir));
     print Dumper($res), "\n" if $verbose;
 }
 
 sub delete {
     my ($file_or_dir) = @_;
     $file_or_dir=~s|^/||;
-    my $res = $box->delete($file_or_dir);
+    my $res = $box->delete(decode_utf8($file_or_dir));
     print Dumper($res), "\n" if $verbose;
 }
 
 sub upload {
-    my ($file, $path) = @_;
+    my ($file, $path, $name) = @_;
     $path=~s|^dropbox:/||
-        or die "Usage: \n    dropbox-api upload /tmp/local.txt dropbox:/Public/some.txt";
-    my $res = $box->putfile($file, $path);
+        or die "Usage: \n    dropbox-api upload /tmp/local.txt dropbox:/Public/";
+    $path=~s|/$||;
+    my $res = $box->putfile($file, $path, $name);
     print Dumper($res), "\n" if $verbose;
 }
 
@@ -222,24 +225,39 @@ sub download {
 }
 
 sub sync {
-    my ($remote_base, $local_base) = @_;
+    my ($arg1, $arg2) = @_;
+    
+    my ($remote_base, $local_base, $command);
+    if ($arg1=~/^dropbox:/ and $arg2!~/^dropbox:/) {
+        ($remote_base, $local_base) = ($arg1, $arg2);
+        $command = \&sync_download;
+    } elsif ($arg1!~/^dropbox:/ and $arg2=~/^dropbox:/) {
+        ($remote_base, $local_base) = ($arg2, $arg1);
+        $command = \&sync_upload;
+    } else {
+        die "Usage: \n    dropbox-api sync dropbox:/Public/ /tmp/pub/\n" .
+                   "or    dropbox-api sync /tmp/pub/ dropbox:/Public/";
+    }
     
     $local_base = dir(abs_path($local_base));
     
-    $remote_base=~s|^dropbox:/|/|
-        or die "Usage: \n    dropbox-api sync dropbox:/Public/ /tmp/pub/";
+    $remote_base=~s|^dropbox:/|/|;
     
     print "!! enable dry run !!\n" if $dry;
     print "remote_base: $remote_base\n" if $verbose;
     print "local_base: $local_base\n" if $verbose;
     
-    die "not found $local_base" unless -d $local_base;
+    $command->($remote_base, $local_base);
+}
+
+sub sync_download {
+    my ($remote_base, $local_base) = @_;
     
-    my $remote_map = {};
+    print "** download **\n" if $verbose;
     
     my $strp = new DateTime::Format::Strptime( pattern => '%a, %d %b %Y %T %z' );
     
-    print "** download **\n" if $verbose;
+    my $remote_map = {};
     
     &_find($remote_base, sub {
         my $content = shift;
@@ -298,7 +316,7 @@ sub sync {
         callback => sub {
             my $local_path = shift;
             next if $local_path eq $local_base;
-            my $rel_path = abs2rel($local_path, $local_base);
+            my $rel_path = abs2rel(decode_utf8($local_path), $local_base);
             if (exists $remote_map->{$rel_path}) {
                 printf "skip $rel_path\n" if $verbose;
             } elsif (-f $local_path) {
@@ -319,6 +337,78 @@ sub sync {
         } elsif (-d $local_path) {
             $local_path->rmtree;
         }
+    }
+}
+
+sub sync_upload {
+    my ($remote_base, $local_base) = @_;
+    
+    print "** upload **\n" if $verbose;
+    
+    my $strp = new DateTime::Format::Strptime( pattern => '%a, %d %b %Y %T %z' );
+    
+    my $remote_map = {};
+    
+    &_find($remote_base, sub {
+        my $content = shift;
+        my $remote_path = $content->{path};
+        my $rel_path = abs2rel($remote_path, $remote_base);
+        $remote_map->{$rel_path} = $content;
+        printf "find: %s\n", $rel_path if $debug;
+    });
+    
+    my @makedirs;
+    $local_base->recurse(
+        preorder => 0,
+        depthfirst => 1,
+        callback => sub {
+            my $local_path = shift;
+            next if $local_path eq $local_base;
+            my $rel_path = abs2rel(decode_utf8($local_path), $local_base);
+            my $remote_path = file($remote_base, $rel_path);
+            my $content = delete $remote_map->{$rel_path};
+            if ($content) {
+                return unless -f $local_path;
+                my $remote_epoch = $strp->parse_datetime($content->{modified})->epoch;
+                my $local_epoch = -f $local_path ? $local_path->stat->mtime : '-';
+                my $remote_size = $content->{bytes};
+                my $local_size = -f $local_path ? $local_path->stat->size : '-';
+                printf "remote: %10s %10s %s\n",
+                    $remote_epoch, $remote_size, $remote_path if $debug;
+                printf "local:  %10s %10s %s\n",
+                    $local_epoch, $local_size, $local_path if $debug;
+                if (($remote_size != $local_size) or
+                    ($remote_epoch < $local_epoch)) {
+                    printf "upload $rel_path $remote_path\n";
+                    $box->putfile("$local_path", substr($remote_path->dir, 1)) unless $dry;
+                } else {
+                    printf "skip $rel_path\n" if $verbose;
+                }
+            } elsif (-f $local_path) {
+                printf "upload $rel_path $remote_path\n";
+                $box->putfile("$local_path", substr($remote_path->dir, 1)) unless $dry;
+            } elsif (-d $local_path) {
+                return if grep { $_=~/^$rel_path/ } @makedirs;
+                printf "mktree $rel_path $remote_path\n";
+                $box->mkdir(substr($remote_path, 1)) unless $dry;
+                push @makedirs, $rel_path;
+            } else {
+                printf "unknown $rel_path\n";
+            }
+        }
+    );
+    
+    return unless $delete;
+    
+    print "** delete **\n" if $verbose;
+    
+    my @deletes;
+    for my $rel_path ( keys %{ $remote_map } ) {
+        next if grep { $rel_path=~/^$_/ } @deletes;
+        my $remote_path = catfile($remote_base, $rel_path);
+        printf "delete $rel_path\n";
+        $box->delete(substr($remote_path, 1)) unless $dry;
+        push @deletes, $rel_path;
     }
 }
 

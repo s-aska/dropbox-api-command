@@ -6,14 +6,9 @@ Dropbox API Wrapper Command
 - [official](http://doc.7kai.org/Product/DropboxAPICommand/README)
 
 ## Commands
-- **list** ... dropbox file list view
-  - printf option.
-  - human readable option
-- **find** ... dropbox file recursive list view
-  - printf option.
-- **sync** ... dropbox file sync to local ( download only )
-  - delete option. ( rsync --delete option like. )
-  - dry-run option.
+- **list**     ... dropbox file list view
+- **find**     ... dropbox file recursive list view
+- **sync**     ... dropbox file sync ( remote => local, local => remote )
 - **copy**     ... copy file or directory
 - **move**     ... move file or directory
 - **mkdir**    ... make directory
@@ -120,12 +115,21 @@ see also list command's printf option.
 
 ## sync
 
+### dropbox => local
 dropbox-api sync **dropbox:**/DROPBOX\_PATH LOCAL\_PATH
 
     > dropbox-api sync dropbox:/product/google-tasks-checker-plus/src /tmp/product
     download /private/tmp/product/external.png
     download /private/tmp/product/icon-32.png
     download /private/tmp/product/icon-128.png
+
+### local => dropbox
+dropbox-api sync LOCAL\_PATH **dropbox:**/DROPBOX\_PATH
+
+    > dropbox-api sync /tmp/product dropbox:/work/src     
+    upload background.html /work/src/background.html
+    upload external.png /work/src/external.png
+    upload icon-128.png /work/src/icon-128.png
 
 ### delete option ( -d )
 
