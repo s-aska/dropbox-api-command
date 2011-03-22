@@ -2,8 +2,8 @@
 
 Dropbox API Wrapper Command
 
-[github]: (https://github.com/s-aska/dropbox-api-command)
-[official]: (http://doc.7kai.org/Product/DropboxAPICommand/README)
+- [github](https://github.com/s-aska/dropbox-api-command)
+- [official](http://doc.7kai.org/Product/DropboxAPICommand/README)
 
 ## Commands
 - **list** ... dropbox file list view
