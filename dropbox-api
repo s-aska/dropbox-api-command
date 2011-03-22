@@ -75,7 +75,7 @@ if ($command eq 'ls' or $command eq 'list') {
     &move(@args);
 } elsif ($command eq 'mkdir' or $command eq 'mktree') {
     &mkdir(@args);
-} elsif ($command eq 'delete' or $command eq 'rm') {
+} elsif ($command eq 'delete' or $command eq 'rm' or $command eq 'rmtree') {
     &delete(@args);
 } elsif ($command eq 'upload' or $command eq 'up') {
     &upload(@args);
