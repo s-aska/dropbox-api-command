@@ -12,62 +12,155 @@ use JSON;
 use Net::Dropbox::API;
 use Path::Class;
 
+my $config_file = file( $ENV{'DROPBOX_CONF'} || ($ENV{'HOME'}, '.dropbox-api-config') );
+
+binmode STDOUT, ':utf8';
+
+my $command = shift;
+my @args;
+for (@{[@ARGV]}) {
+    last if $_=~/^-/;
+    push @args, shift;
+}
+
 my %opts;
-getopts('ndvD', \%opts);
+getopts('ndvDshp:', \%opts);
 
 my $dry     = $opts{n};
 my $delete  = $opts{d};
 my $verbose = $opts{v};
 my $debug   = $opts{D};
+my $human   = $opts{h};
+my $printf  = $opts{p};
+my $context = $opts{s} ? 'sandbox' : 'dropbox';
 
-my ($mode, $remote_base, $local_base) = @ARGV;
+if ($command eq 'setup') {
+    &setup();
+}
 
-$remote_base = '/' . $remote_base if $remote_base!~m|^/|;
+my $remote_base;
+my $local_base;
 
 # connect dropbox
-my $config_file = file( $ENV{'DROPBOX_CONF'} || ($ENV{'HOME'}, '.dropbox-api-config') );
 my $config = decode_json($config_file->slurp);
 $config->{key} or die 'please set config key.';
 $config->{secret} or die 'please set config secret.';
 $config->{access_token} or die 'please set config access_token.';
 $config->{access_secret} or die 'please set config access_secret.';
 my $box = Net::Dropbox::API->new($config);
-$box->context('dropbox');
+$box->context($context);
 
-binmode STDOUT, ':utf8';
+# printf option
+my $strp;
+my $size = $human ? 'size' : 'bytes';
+my $format = {
+    i => 'icon',
+    b => 'bytes',
+    e => 'thumb_exists',
+    d => '_is_dir',
+    p => 'path',
+    s => '_size',
+    M => 'mime_type',
+    t => 'modified',
+    r => 'revision'
+};
 
-if ($mode eq 'ls') {
-    &ls();
-} elsif ($mode eq 'find') {
-    &find();
-} elsif ($mode eq 'sync') {
-    &sync();
+if ($command eq 'ls' or $command eq 'list') {
+    &list(@args);
+} elsif ($command eq 'find') {
+    &find(@args);
+} elsif ($command eq 'copy' or $command eq 'cp') {
+    &copy(@args);
+} elsif ($command eq 'move' or $command eq 'mv') {
+    &move(@args);
+} elsif ($command eq 'mkdir' or $command eq 'mktree') {
+    &mkdir(@args);
+} elsif ($command eq 'delete' or $command eq 'rm') {
+    &delete(@args);
+} elsif ($command eq 'upload' or $command eq 'up') {
+    &upload(@args);
+} elsif ($command eq 'download' or $command eq 'dl') {
+    &download(@args);
+} elsif ($command eq 'sync') {
+    &sync(@args);
 } else {
-    die "unknown option $mode";
+    die "unknown command $command";
 }
 
 exit(0);
 
+sub setup {
+    my $config = {};
 
-sub ls {
+    print "Please Input API Key: ";
+    chomp( my $key = <STDIN> );
+    die 'Get API Key from https://www.dropbox.com/developers' unless $key;
+    $config->{key} = $key;
+
+    print "Please Input API Secret: ";
+    chomp( my $secret = <STDIN> );
+    die 'Get API Secret from https://www.dropbox.com/developers' unless $secret;
+    $config->{secret} = $secret;
+
+    $config->{callback_url} = '';
+    my $box = Net::Dropbox::API->new($config);
+    my $login_link = $box->login;
+    die $box->error if $box->error;
+    print "URL: $login_link\n";
+    print "Please Access URL and press Enter\n";
+    print "OK?";
+    <STDIN>;
+    $box->auth;
+    die $box->error if $box->error;
+    $config->{access_token} = $box->access_token;
+    $config->{access_secret} = $box->access_secret;
+    print "success! try\n";
+    print "> dropbox-api ls\n";
+    print "> dropbox-api find /\n";
+
+    $config_file->openw->print(encode_json($config));
+
+    chmod 0600, $config_file;
+    
+    exit(0);
+}
+
+sub list {
+    my $remote_base = shift;
     $remote_base=~s|^/||;
     my $list = $box->list($remote_base);
     for my $content (@{$list->{contents}}) {
-        if ($verbose) {
-            print Dumper($content);
-            next;
-        }
-        printf "%4s %10s %s %s\n",
-            ($content->{is_dir} ? 'dir' : 'file'),
-            ($content->{is_dir} ? '-' : $content->{size}),
+        print &_line($content);
+    }
+}
+
+sub _line {
+    my ($content) = @_;
+    $strp ||= new DateTime::Format::Strptime( pattern => '%a, %d %b %Y %T %z' );
+    my $dt;
+    if ($printf) {
+        my $line = $printf;
+        $content->{_is_dir} = $content->{is_dir} ? 'd' : '-';
+        $content->{_size} = $content->{is_dir} ? '-' : $content->{size};
+        $line=~s/\%T([^\%])/
+            $dt ||= $strp->parse_datetime($content->{modified});
+            $dt->strftime('%'.$1);
+        /egx;
+        $line=~s|\%([^\%])|$content->{$format->{$1}}|eg;
+        return eval qq{"$line"};
+    } else {
+        return sprintf "%s %8s %s %s\n",
+            ($content->{is_dir} ? 'd' : '-'),
+            ($content->{is_dir} ? '-' : $content->{$size}),
             $content->{modified},
             $content->{path};
     }
 }
 
-
 sub find {
-    &_find($remote_base, sub { printf "%s\n", shift->{path} });
+    my $remote_base = shift;
+    $printf ||= "%p\n";
+    &_find($remote_base, sub { print &_line(shift); });
 }
 
 sub _find {
@@ -82,9 +175,59 @@ sub _find {
     }
 }
 
+sub copy {
+    my ($src, $dst) = @_;
+    $src=~s|^/||;
+    $dst=~s|^/||;
+    my $res = $box->copy($src, $dst);
+    print Dumper($res), "\n" if $verbose;
+}
+
+sub move {
+    my ($src, $dst) = @_;
+    $src=~s|^/||;
+    $dst=~s|^/||;
+    my $res = $box->move($src, $dst);
+    print Dumper($res), "\n" if $verbose;
+}
+
+sub mkdir {
+    my ($dir) = @_;
+    $dir=~s|^/||;
+    my $res = $box->mkdir($dir);
+    print Dumper($res), "\n" if $verbose;
+}
+
+sub delete {
+    my ($file_or_dir) = @_;
+    $file_or_dir=~s|^/||;
+    my $res = $box->delete($file_or_dir);
+    print Dumper($res), "\n" if $verbose;
+}
+
+sub upload {
+    my ($file, $path) = @_;
+    $path=~s|^dropbox:/||
+        or die "Usage: \n    dropbox-api upload /tmp/local.txt dropbox:/Public/some.txt";
+    my $res = $box->putfile($file, $path);
+    print Dumper($res), "\n" if $verbose;
+}
+
+sub download {
+    my ($path, $file) = @_;
+    $path=~s|^dropbox:/||
+        or die "Usage: \n    dropbox-api download dropbox:/Public/some.txt /tmp/local.txt";
+    my $res = $box->getfile($path, $file);
+    print Dumper($res), "\n" if $verbose;
+}
 
 sub sync {
+    my ($remote_base, $local_base) = @_;
+    
     $local_base = dir(abs_path($local_base));
+    
+    $remote_base=~s|^dropbox:/|/|
+        or die "Usage: \n    dropbox-api sync dropbox:/Public/ /tmp/pub/";
     
     print "!! enable dry run !!\n" if $dry;
     print "remote_base: $remote_base\n" if $verbose;
@@ -94,10 +237,7 @@ sub sync {
     
     my $remote_map = {};
     
-    # Sun, 26 Dec 2010 21:43:11 +0000
-    my $strp = new DateTime::Format::Strptime(
-        pattern => '%a, %d %b %Y %T %z'
-    );
+    my $strp = new DateTime::Format::Strptime( pattern => '%a, %d %b %Y %T %z' );
     
     print "** download **\n" if $verbose;
     
