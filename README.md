@@ -42,7 +42,7 @@ Dropbox API Wrapper Command
 
 ## list ( ls )
 
-dropbox-api list|ls DROPBOX_PATH
+dropbox-api list DROPBOX_PATH
 
     > dropbox-api list /product
     d        - Thu, 24 Feb 2011 06:58:00 +0000 /product/chrome-extentions
@@ -70,19 +70,6 @@ print sizes in human readable format (e.g., 1K 234M 2G)
 
 print format.
 
-    %d ... is_dir ( d: dir, -: file )
-    %p ... path
-    %b ... bytes
-    %s ... size ( eg. 1.2Kb )
-    %i ... icon
-    %e ... thumb_exists
-    %M ... mime_type
-    %t ... modified time
-    %r ... revision
-    
-    %Tk ... DateTime ‘strftime’ function
-            <http://search.cpan.org/dist/DateTime/lib/DateTime.pm#strftime_Patterns>
-
     > dropbox-api list /product -p "%d\t%s\t%TY/%Tm/%Td %TH:%TM:%TS\t%p\n"
     d       -       2011/02/24 06:58:00     /product/chrome-extentions
     d       -       2011/02/24 07:30:02     /product/dot-files
@@ -91,6 +78,19 @@ print format.
     d       -       2011/02/24 03:49:03     /product/markdown-binder-plack
     d       -       2011/02/25 11:11:42     /product/MasterSpark
     d       -       2010/10/26 05:14:21     /product/mime-parser-delux
+    
+        %d ... is_dir ( d: dir, -: file )
+        %p ... path
+        %b ... bytes
+        %s ... size (e.g., 1K 234M 2G)
+        %i ... icon
+        %e ... thumb_exists
+        %M ... mime_type
+        %t ... modified time
+        %r ... revision
+    
+        %Tk ... DateTime ‘strftime’ function
+                <http://search.cpan.org/dist/DateTime/lib/DateTime.pm#strftime_Patterns>
 
 ## find
 
@@ -171,25 +171,25 @@ dropbox-api sync **dropbox:**/DROPBOX\_PATH LOCAL\_PATH
 
 ## copy ( cp )
 
-dropbox-api copy|cp source\_file target\_file
+dropbox-api copy source\_file target\_file
 
     dropbox-api copy memo.txt memo.txt.bak
 
 ## move ( mv )
 
-dropbox-api move|mv source\_file target\_file
+dropbox-api move source\_file target\_file
 
     dropbox-api move memo.txt memo.txt.bak
 
 ## mkdir ( mktree )
 
-dropbox-api mkdir|mktree directory\_name
+dropbox-api mkdir directory\_name
 
     dropbox-api mkdir product/src
 
-## delete ( rm )
+## delete ( rm, rmtree )
 
-dropbox-api delete|rm file\_or\_directory
+dropbox-api delete file\_or\_directory
 
     dropbox-api delete product/src
 
