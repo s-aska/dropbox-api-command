@@ -2,20 +2,23 @@
 
 Dropbox API Wrapper Command
 
+[github]: (https://github.com/s-aska/dropbox-api-command)
+[official]: (http://doc.7kai.org/Product/DropboxAPICommand/README)
+
 ## Commands
-- list ... dropbox file list view
+- **list** ... dropbox file list view
   - printf option.
   - human readable option
-- find ... dropbox file recursive list view
+- **find** ... dropbox file recursive list view
   - printf option.
-- sync ... dropbox file sync to local ( download only )
+- **sync** ... dropbox file sync to local ( download only )
   - delete option. ( rsync --delete option like. )
   - dry-run option.
-- copy     ... copy file or directory
-- move     ... move file or directory
-- mkdir    ... make directory
-- download ... download file
-- upload  ... upload file
+- **copy**     ... copy file or directory
+- **move**     ... move file or directory
+- **mkdir**    ... make directory
+- **download** ... download file
+- **upload**   ... upload file
 
 ## Install
 
@@ -96,7 +99,7 @@ print format.
 
 dropbox-api find DROPBOX_PATH
 
-    > dropbox-api find /product/chrome-extentions/google-tasks-checker-plus
+    > dropbox-api find /product/google-tasks-checker-plus
     /product/chrome-extentions/google-tasks-checker-plus/README.md
     /product/chrome-extentions/google-tasks-checker-plus/src
     /product/chrome-extentions/google-tasks-checker-plus/src/background.html
@@ -119,14 +122,14 @@ see also list command's printf option.
 
 dropbox-api sync **dropbox:**/DROPBOX\_PATH LOCAL\_PATH
 
-    > dropbox-api sync /product/chrome-extentions/google-tasks-checker-plus/src /tmp/product
+    > dropbox-api sync dropbox:/product/google-tasks-checker-plus/src /tmp/product
     download /private/tmp/product/external.png
     download /private/tmp/product/icon-32.png
     download /private/tmp/product/icon-128.png
 
 ### delete option ( -d )
 
-    > dropbox-api sync dropbox:/product/chrome-extentions/google-tasks-checker-plus/src /tmp/product -d
+    > dropbox-api sync dropbox:/product/google-tasks-checker-plus/src /tmp/product -d
     download /private/tmp/product/external.png
     download /private/tmp/product/icon-32.png
     download /private/tmp/product/icon-128.png
@@ -134,7 +137,7 @@ dropbox-api sync **dropbox:**/DROPBOX\_PATH LOCAL\_PATH
 
 ### dry run option ( -n )
 
-    > dropbox-api sync dropbox:/product/chrome-extentions/google-tasks-checker-plus/src /tmp/product -nd
+    > dropbox-api sync dropbox:/product/google-tasks-checker-plus/src /tmp/product -nd
     !! enable dry run !!
     download /private/tmp/product/external.png
     download /private/tmp/product/icon-32.png
@@ -143,7 +146,7 @@ dropbox-api sync **dropbox:**/DROPBOX\_PATH LOCAL\_PATH
 
 ### verbose option ( -v )
 
-    > dropbox-api sync dropbox:/product/chrome-extentions/google-tasks-checker-plus/src /tmp/product -vnd
+    > dropbox-api sync dropbox:/product/google-tasks-checker-plus/src /tmp/product -vnd
     remote_base: /product/chrome-extentions/google-tasks-checker-plus/src
     local_base: /private/tmp/product
     ** download **
