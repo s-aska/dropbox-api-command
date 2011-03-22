@@ -75,13 +75,13 @@ if ($command eq 'ls' or $command eq 'list') {
     &copy(@args);
 } elsif ($command eq 'move' or $command eq 'mv') {
     &move(@args);
-} elsif ($command eq 'mkdir' or $command eq 'mktree') {
+} elsif ($command eq 'mkdir' or $command eq 'mkpath') {
     &mkdir(@args);
 } elsif ($command eq 'delete' or $command eq 'rm' or $command eq 'rmtree') {
     &delete(@args);
-} elsif ($command eq 'upload' or $command eq 'up') {
+} elsif ($command eq 'upload' or $command eq 'up' or $command eq 'put') {
     &upload(@args);
-} elsif ($command eq 'download' or $command eq 'dl') {
+} elsif ($command eq 'download' or $command eq 'dl' or $command eq 'get') {
     &download(@args);
 } elsif ($command eq 'sync') {
     &sync(@args);

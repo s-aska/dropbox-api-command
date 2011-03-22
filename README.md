@@ -6,14 +6,15 @@ Dropbox API Wrapper Command
 - [official](http://doc.7kai.org/Product/DropboxAPICommand/README)
 
 ## Commands
-- **list**     ... dropbox file list view
-- **find**     ... dropbox file recursive list view
-- **sync**     ... dropbox file sync ( remote => local, local => remote )
-- **copy**     ... copy file or directory
-- **move**     ... move file or directory
-- **mkdir**    ... make directory
-- **download** ... download file
-- **upload**   ... upload file
+- *ls* ( alias: list )
+- *find*
+- *sync* ( alias: rsync )
+- *cp* ( alias: copy )
+- *mv* ( alias: move )
+- *mkdir* ( alias: mkpath )
+- *rm* ( alias: delete, rmtree )
+- *get* ( alias: dl, download )
+- *put* ( alias: up, upload )
 
 ## Install
 
@@ -38,7 +39,7 @@ Dropbox API Wrapper Command
     OK?
     success!
 
-## list ( ls )
+## ls ( list )
 
 dropbox-api list DROPBOX_PATH
 
@@ -113,7 +114,7 @@ dropbox-api find DROPBOX_PATH
 
 see also list command's printf option.
 
-## sync
+## sync ( rsync )
 
 ### dropbox => local
 dropbox-api sync **dropbox:**/DROPBOX\_PATH LOCAL\_PATH
@@ -176,41 +177,41 @@ dropbox-api sync LOCAL\_PATH **dropbox:**/DROPBOX\_PATH
     skip popup.html
     skip reset.css
 
-## copy ( cp )
+## cp ( copy )
 
-dropbox-api copy source\_file target\_file
+dropbox-api cp source\_file target\_file
 
-    dropbox-api copy memo.txt memo.txt.bak
+    dropbox-api cp memo.txt memo.txt.bak
 
-## move ( mv )
+## mv ( move )
 
-dropbox-api move source\_file target\_file
+dropbox-api mv source\_file target\_file
 
-    dropbox-api move memo.txt memo.txt.bak
+    dropbox-api mv memo.txt memo.txt.bak
 
-## mkdir ( mktree )
+## mkdir ( mkpath )
 
 dropbox-api mkdir directory\_name
 
     dropbox-api mkdir product/src
 
-## delete ( rm, rmtree )
+## rm ( delete, rmtree )
 
-dropbox-api delete file\_or\_directory
+dropbox-api rm file\_or\_directory
 
-    dropbox-api delete product/src
+    dropbox-api rm product/src
 
-## upload ( up )
+## get ( dl, download )
 
-dropbox-api upload upload\_file **dropbox:**/remote\_path
+dropbox-api get **dropbox:**/download\_file local\_path
 
-    dropbox-api upload /tmp/foo.txt dropbox:/Public/
+    dropbox-api get dropbox:/Public/foo.txt /tmp/foo.txt
 
-## download ( dl )
+## put ( up, upload )
 
-dropbox-api download **dropbox:**/download\_file local\_path
+dropbox-api put upload\_file **dropbox:**/remote\_path
 
-    dropbox-api download dropbox:/Public/foo.txt /tmp/foo.txt
+    dropbox-api put /tmp/foo.txt dropbox:/Public/
 
 ## License
 Released under the [MIT license](http://creativecommons.org/licenses/MIT/).
