@@ -46,7 +46,7 @@ disp help.
 - alias
   - \-
 - syntax
-  - dropbox-api help [\<command\>]
+  - dropbox-api help [&lt;command&gt;]
 
 ### Example
 
@@ -102,7 +102,7 @@ file list view.
 - alias
   - list
 - syntax
-  - dropbox-api ls \<dropbox_path\>
+  - dropbox-api ls &lt;dropbox\_path&gt;
 
 ### Example
 
@@ -161,7 +161,7 @@ recursive file list view.
 - alias
   - \-
 - syntax
-  - dropbox-api find \<dropbox_path\>
+  - dropbox-api find &lt;dropbox\_path&gt;
 
 ### Example
 
@@ -188,7 +188,7 @@ see also list command's printf option.
 
 ### dropbox => local
 
-dropbox-api sync dropbox:\<source_dir\> \<target_dir\>
+dropbox-api sync dropbox:&lt;source\_dir&gt; &lt;target\_dir&gt;
 
     > dropbox-api sync dropbox:/product/google-tasks-checker-plus/src /tmp/product
     download /private/tmp/product/external.png
@@ -197,7 +197,7 @@ dropbox-api sync dropbox:\<source_dir\> \<target_dir\>
 
 ### local => dropbox
 
-dropbox-api sync \<source_dir\> dropbox:\<target_dir\>
+dropbox-api sync &lt;source\_dir&gt; dropbox:&lt;target\_dir&gt;
 
     > dropbox-api sync /tmp/product dropbox:/work/src     
     upload background.html /work/src/background.html
@@ -256,7 +256,7 @@ copy file or directory.
 - alias
   - copy
 - syntax
-  - dropbox-api cp \<source_file\> \<target_file\>
+  - dropbox-api cp &lt;source\_file&gt; &lt;target\_file&gt;
 
 ### Example
 
@@ -269,7 +269,7 @@ move file or directory.
 - alias
   - move
 - syntax
-  - dropbox-api mv \<source_file\> \<target_file\>
+  - dropbox-api mv &lt;source\_file&gt; &lt;target\_file&gt;
 
 ### Example
 
@@ -284,7 +284,7 @@ make directory.
 - alias
   - mkpath
 - syntax
-  - dropbox-api mkdir \<directory\>
+  - dropbox-api mkdir &lt;directory&gt;
 
 ### Example
 
@@ -299,7 +299,7 @@ remove file or directory.
 - alias
   - rmtree
 - syntax
-  - dropbox-api rm \<file_or_directory\>
+  - dropbox-api rm &lt;file_or_directory&gt;
 
 ### Example
 
@@ -312,7 +312,7 @@ download file from dropbox.
 - alias
   - dl, download
 - syntax
-  - dropbox-api get dropbox:\<dropbox_file\> <file>
+  - dropbox-api get dropbox:&lt;dropbox_file&gt; <file>
 
 ### Example
 
@@ -325,7 +325,7 @@ upload file to dropbox.
 - alias
   - up, upload
 - syntax
-  - dropbox-api put \<file\> dropbox:\<dropbox_dir\>
+  - dropbox-api put &lt;file&gt; dropbox:&lt;dropbox_dir&gt;
 
 ### Example
 
