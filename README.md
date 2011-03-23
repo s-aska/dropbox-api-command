@@ -6,15 +6,15 @@ Dropbox API Wrapper Command
 - [official](http://doc.7kai.org/Product/DropboxAPICommand/README)
 
 ## Commands
-- *ls* ( alias: list )
-- *find*
-- *sync* ( alias: rsync )
-- *cp* ( alias: copy )
-- *mv* ( alias: move )
-- *mkdir* ( alias: mkpath )
-- *rm* ( alias: delete, rmtree )
-- *get* ( alias: dl, download )
-- *put* ( alias: up, upload )
+- ls
+- find
+- sync
+- cp
+- mv
+- rm
+- mkdir
+- get
+- put
 
 ## Install
 
@@ -39,9 +39,16 @@ Dropbox API Wrapper Command
     OK?
     success!
 
-## ls ( list )
+## ls
 
-dropbox-api list DROPBOX_PATH
+file list view.
+
+- alias
+  - list
+- syntax
+  - dropbox-api list dropbox_path
+
+### Example
 
     > dropbox-api list /product
     d        - Thu, 24 Feb 2011 06:58:00 +0000 /product/chrome-extentions
@@ -51,6 +58,8 @@ dropbox-api list DROPBOX_PATH
     d        - Thu, 24 Feb 2011 03:49:03 +0000 /product/markdown-binder-plack
     d        - Fri, 25 Feb 2011 11:11:42 +0000 /product/MasterSpark
     d        - Tue, 26 Oct 2010 05:14:21 +0000 /product/mime-parser-delux
+
+alias: list
 
 ### human readable option ( -h )
 
@@ -93,7 +102,14 @@ print format.
 
 ## find
 
-dropbox-api find DROPBOX_PATH
+recursive file list view.
+
+- alias
+  - \-
+- syntax
+  - dropbox-api find dropbox_path
+
+### Example
 
     > dropbox-api find /product/google-tasks-checker-plus
     /product/chrome-extentions/google-tasks-checker-plus/README.md
@@ -117,7 +133,8 @@ see also list command's printf option.
 ## sync ( rsync )
 
 ### dropbox => local
-dropbox-api sync **dropbox:**/DROPBOX\_PATH LOCAL\_PATH
+
+dropbox-api sync **dropbox:**/dropbox\_path local\_path
 
     > dropbox-api sync dropbox:/product/google-tasks-checker-plus/src /tmp/product
     download /private/tmp/product/external.png
@@ -125,7 +142,8 @@ dropbox-api sync **dropbox:**/DROPBOX\_PATH LOCAL\_PATH
     download /private/tmp/product/icon-128.png
 
 ### local => dropbox
-dropbox-api sync LOCAL\_PATH **dropbox:**/DROPBOX\_PATH
+
+dropbox-api sync local\_path **dropbox:**/dropbox\_path
 
     > dropbox-api sync /tmp/product dropbox:/work/src     
     upload background.html /work/src/background.html
@@ -177,39 +195,85 @@ dropbox-api sync LOCAL\_PATH **dropbox:**/DROPBOX\_PATH
     skip popup.html
     skip reset.css
 
-## cp ( copy )
+## cp
 
-dropbox-api cp source\_file target\_file
+copy file or directory.
+
+- alias
+  - copy
+- syntax
+  - dropbox-api cp source\_file target\_file
+
+### Example
 
     dropbox-api cp memo.txt memo.txt.bak
 
-## mv ( move )
+## mv
 
-dropbox-api mv source\_file target\_file
+move file or directory.
+
+- alias
+  - move
+- syntax
+  - dropbox-api mv source\_file target\_file
+
+### Example
 
     dropbox-api mv memo.txt memo.txt.bak
 
-## mkdir ( mkpath )
+## mkdir
 
-dropbox-api mkdir directory\_name
+make directory.
+
+*no error if existing, make parent directories as needed.*
+
+- alias
+  - mkpath
+- syntax
+  - dropbox-api mkdir directory
+
+### Example
 
     dropbox-api mkdir product/src
 
-## rm ( delete, rmtree )
+## rm
 
-dropbox-api rm file\_or\_directory
+remove file or directory.
+
+*remove the contents of directories recursively.*
+
+- alias
+  - rmtree
+- syntax
+  - dropbox-api rm file\_or\_directory
+
+### Example
 
     dropbox-api rm product/src
 
-## get ( dl, download )
+## get
 
-dropbox-api get **dropbox:**/download\_file local\_path
+download file from dropbox.
+
+- alias
+  - dl, download
+- syntax
+  - dropbox-api get **dropbox:**/download\_file local\_path
+
+### Example
 
     dropbox-api get dropbox:/Public/foo.txt /tmp/foo.txt
 
-## put ( up, upload )
+## put
 
-dropbox-api put upload\_file **dropbox:**/remote\_path
+upload file to dropbox.
+
+- alias
+  - up, upload
+- syntax
+  - dropbox-api put upload\_file **dropbox:**/dropbox\_path
+
+### Example
 
     dropbox-api put /tmp/foo.txt dropbox:/Public/
 
