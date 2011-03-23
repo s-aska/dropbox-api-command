@@ -31,6 +31,8 @@ for (@{[@ARGV]}) {
 my %opts;
 getopts('ndvDshp:', \%opts);
 
+push @args, @ARGV;
+
 my $dry     = $opts{n};
 my $delete  = $opts{d};
 my $verbose = $opts{v};
@@ -103,14 +105,14 @@ sub help {
             dropbox-api-ls - list directory contents
 
         SYNOPSIS
-            dropbox-api ls <dropbox_path>
+            dropbox-api ls <dropbox_path> [options]
 
         Example
             dropbox-api ls Public
             dropbox-api ls Public -h
             dropbox-api ls Public -p "%d\t%s\t%TY/%Tm/%Td %TH:%TM:%TS\t%p\n"
 
-        The following options are available:
+        Options
             -h print sizes in human readable format (e.g., 1K 234M 2G)
             -p print format.
                 %d ... is_dir ( d: dir, -: file )
@@ -130,14 +132,14 @@ sub help {
             dropbox-api-find - walk a file hierarchy
         
         SYNOPSIS
-            dropbox-api find <dropbox_path>
+            dropbox-api find <dropbox_path> [options]
 
         Example
             dropbox-api find Public
             dropbox-api find Public -h
             dropbox-api find Public -p "%d\t%s\t%TY/%Tm/%Td %TH:%TM:%TS\t%p\n"
 
-        The following options are available:
+        Options
             -h print sizes in human readable format (e.g., 1K 234M 2G)
             -p print format.
                 %d ... is_dir ( d: dir, -: file )
@@ -226,15 +228,15 @@ sub help {
             dropbox-api-sync - sync directory
         
         SYNOPSIS
-            dropbox-api sync dropbox:<source_dir> <target_dir>
-            dropbox-api sync <source_dir> dropbox:<target_dir>
+            dropbox-api sync dropbox:<source_dir> <target_dir> [options]
+            dropbox-api sync <source_dir> dropbox:<target_dir> [options]
 
         Example
             dropbox-api sync dropbox:/Public/product/dropbox-api/ ~/work/dropbox-api/
             dropbox-api sync ~/work/dropbox-api/ dropbox:/Public/product/dropbox-api/ -vdn
             dropbox-api sync ~/work/dropbox-api/ dropbox:/Public/product/dropbox-api/ -d
         
-        The following options are available:
+        Options
             -v increase verbosity
             -n show what would have been transferred (dry-run)
             -d delete files that don't exist on sender

@@ -7,8 +7,8 @@ Dropbox API Wrapper Command
 
 ## Commands
 - ls
-- find
-- sync
+- **find**
+- **sync**
 - cp
 - mv
 - rm
@@ -74,14 +74,14 @@ disp help.
         dropbox-api-ls - list directory contents
 
     SYNOPSIS
-        dropbox-api ls <dropbox_path>
+        dropbox-api ls <dropbox_path> [options]
 
     Example
         dropbox-api ls Public
         dropbox-api ls Public -h
         dropbox-api ls Public -p "%d\t%s\t%TY/%Tm/%Td %TH:%TM:%TS\t%p\n"
 
-    The following options are available:
+    Options
         -h print sizes in human readable format (e.g., 1K 234M 2G)
         -p print format.
             %d ... is_dir ( d: dir, -: file )
@@ -108,12 +108,7 @@ file list view.
 
     > dropbox-api list /product
     d        - Thu, 24 Feb 2011 06:58:00 +0000 /product/chrome-extentions
-    d        - Thu, 24 Feb 2011 07:30:02 +0000 /product/dot-files
-    d        - Wed, 23 Feb 2011 05:51:05 +0000 /product/dropbox-sync-down
     -   294557 Sun, 26 Dec 2010 21:55:59 +0000 /product/ex.zip
-    d        - Thu, 24 Feb 2011 03:49:03 +0000 /product/markdown-binder-plack
-    d        - Fri, 25 Feb 2011 11:11:42 +0000 /product/MasterSpark
-    d        - Tue, 26 Oct 2010 05:14:21 +0000 /product/mime-parser-delux
 
 ### human readable option ( -h )
 
@@ -121,12 +116,7 @@ print sizes in human readable format (e.g., 1K 234M 2G)
 
     > dropbox-api ls /product -h
     d        - Thu, 24 Feb 2011 06:58:00 +0000 /product/chrome-extentions
-    d        - Thu, 24 Feb 2011 07:30:02 +0000 /product/dot-files
-    d        - Wed, 23 Feb 2011 05:51:05 +0000 /product/dropbox-sync-down
     -  287.7KB Sun, 26 Dec 2010 21:55:59 +0000 /product/ex.zip
-    d        - Thu, 24 Feb 2011 03:49:03 +0000 /product/markdown-binder-plack
-    d        - Fri, 25 Feb 2011 11:11:42 +0000 /product/MasterSpark
-    d        - Tue, 26 Oct 2010 05:14:21 +0000 /product/mime-parser-delux
 
 ### printf option ( -p )
 
@@ -134,12 +124,7 @@ print format.
 
     > dropbox-api ls /product -p "%d\t%s\t%TY/%Tm/%Td %TH:%TM:%TS\t%p\n"
     d       -       2011/02/24 06:58:00     /product/chrome-extentions
-    d       -       2011/02/24 07:30:02     /product/dot-files
-    d       -       2011/02/23 05:51:05     /product/dropbox-sync-down
     -       287.7KB 2010/12/26 21:55:59     /product/ex.zip
-    d       -       2011/02/24 03:49:03     /product/markdown-binder-plack
-    d       -       2011/02/25 11:11:42     /product/MasterSpark
-    d       -       2010/10/26 05:14:21     /product/mime-parser-delux
     
         %d ... is_dir ( d: dir, -: file )
         %p ... path
@@ -161,7 +146,7 @@ recursive file list view.
 - alias
   - \-
 - syntax
-  - dropbox-api find &lt;dropbox\_path&gt;
+  - dropbox-api find &lt;dropbox\_path&gt; [options]
 
 ### Example
 
@@ -186,18 +171,18 @@ see also list command's printf option.
 
 ## sync ( rsync )
 
-### dropbox => local
+### sync from dropbox
 
-dropbox-api sync dropbox:&lt;source\_dir&gt; &lt;target\_dir&gt;
+dropbox-api sync dropbox:&lt;source\_dir&gt; &lt;target\_dir&gt; [options]
 
     > dropbox-api sync dropbox:/product/google-tasks-checker-plus/src /tmp/product
     download /private/tmp/product/external.png
     download /private/tmp/product/icon-32.png
     download /private/tmp/product/icon-128.png
 
-### local => dropbox
+### sync to dropbox
 
-dropbox-api sync &lt;source\_dir&gt; dropbox:&lt;target\_dir&gt;
+dropbox-api sync &lt;source\_dir&gt; dropbox:&lt;target\_dir&gt; [options]
 
     > dropbox-api sync /tmp/product dropbox:/work/src     
     upload background.html /work/src/background.html
@@ -214,7 +199,7 @@ dropbox-api sync &lt;source\_dir&gt; dropbox:&lt;target\_dir&gt;
 
 ### dry run option ( -n )
 
-    > dropbox-api sync dropbox:/product/google-tasks-checker-plus/src /tmp/product -nd
+    > dropbox-api sync dropbox:/product/google-tasks-checker-plus/src /tmp/product -dn
     !! enable dry run !!
     download /private/tmp/product/external.png
     download /private/tmp/product/icon-32.png
@@ -223,7 +208,7 @@ dropbox-api sync &lt;source\_dir&gt; dropbox:&lt;target\_dir&gt;
 
 ### verbose option ( -v )
 
-    > dropbox-api sync dropbox:/product/google-tasks-checker-plus/src /tmp/product -vnd
+    > dropbox-api sync dropbox:/product/google-tasks-checker-plus/src /tmp/product -dnv
     remote_base: /product/chrome-extentions/google-tasks-checker-plus/src
     local_base: /private/tmp/product
     ** download **
