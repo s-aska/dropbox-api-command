@@ -46,7 +46,7 @@ disp help.
 - alias
   - \-
 - syntax
-  - dropbox-api help [<subcommand>]
+  - dropbox-api help [\<command\>]
 
 ### Example
 
