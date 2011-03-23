@@ -39,6 +39,62 @@ Dropbox API Wrapper Command
     OK?
     success!
 
+## help
+
+disp help.
+
+- alias
+  - \-
+- syntax
+  - dropbox-api help [<subcommand>]
+
+### Example
+
+    > dropbox-api help
+    Usage: dropbox-api <command> [args] [options]
+
+    Available commands:
+        setup get access_key and access_secret
+        ls    list directory contents
+        find  walk a file hierarchy
+        cp    copy file or directory
+        mv    move file or directory
+        mkdir make directory (Create intermediate directories as required)
+        rm    remove file or directory (Attempt to remove the file hierarchy rooted in each file argument)
+        put   upload file
+        get   download file
+        sync  sync directory (local => dropbox or dropbox => local)
+
+    See 'dropbox-api help <command>' for more information on a specific command.
+
+### Example ( command help )
+
+    > dropbox-api help ls
+    Name
+        dropbox-api-ls - list directory contents
+
+    SYNOPSIS
+        dropbox-api ls <dropbox_path>
+
+    Example
+        dropbox-api ls Public
+        dropbox-api ls Public -h
+        dropbox-api ls Public -p "%d\t%s\t%TY/%Tm/%Td %TH:%TM:%TS\t%p\n"
+
+    The following options are available:
+        -h print sizes in human readable format (e.g., 1K 234M 2G)
+        -p print format.
+            %d ... is_dir ( d: dir, -: file )
+            %p ... path
+            %b ... bytes
+            %s ... size (e.g., 1K 234M 2G)
+            %i ... icon
+            %e ... thumb_exists
+            %M ... mime_type
+            %t ... modified time
+            %r ... revision
+            %Tk ... DateTime ‘strftime’ function
+
 ## ls
 
 file list view.
@@ -46,7 +102,7 @@ file list view.
 - alias
   - list
 - syntax
-  - dropbox-api list dropbox_path
+  - dropbox-api ls \<dropbox_path\>
 
 ### Example
 
@@ -59,13 +115,11 @@ file list view.
     d        - Fri, 25 Feb 2011 11:11:42 +0000 /product/MasterSpark
     d        - Tue, 26 Oct 2010 05:14:21 +0000 /product/mime-parser-delux
 
-alias: list
-
 ### human readable option ( -h )
 
 print sizes in human readable format (e.g., 1K 234M 2G)
 
-    > dropbox-api list /product -h
+    > dropbox-api ls /product -h
     d        - Thu, 24 Feb 2011 06:58:00 +0000 /product/chrome-extentions
     d        - Thu, 24 Feb 2011 07:30:02 +0000 /product/dot-files
     d        - Wed, 23 Feb 2011 05:51:05 +0000 /product/dropbox-sync-down
@@ -78,7 +132,7 @@ print sizes in human readable format (e.g., 1K 234M 2G)
 
 print format.
 
-    > dropbox-api list /product -p "%d\t%s\t%TY/%Tm/%Td %TH:%TM:%TS\t%p\n"
+    > dropbox-api ls /product -p "%d\t%s\t%TY/%Tm/%Td %TH:%TM:%TS\t%p\n"
     d       -       2011/02/24 06:58:00     /product/chrome-extentions
     d       -       2011/02/24 07:30:02     /product/dot-files
     d       -       2011/02/23 05:51:05     /product/dropbox-sync-down
@@ -107,7 +161,7 @@ recursive file list view.
 - alias
   - \-
 - syntax
-  - dropbox-api find dropbox_path
+  - dropbox-api find \<dropbox_path\>
 
 ### Example
 
@@ -134,7 +188,7 @@ see also list command's printf option.
 
 ### dropbox => local
 
-dropbox-api sync **dropbox:**/dropbox\_path local\_path
+dropbox-api sync dropbox:\<source_dir\> \<target_dir\>
 
     > dropbox-api sync dropbox:/product/google-tasks-checker-plus/src /tmp/product
     download /private/tmp/product/external.png
@@ -143,7 +197,7 @@ dropbox-api sync **dropbox:**/dropbox\_path local\_path
 
 ### local => dropbox
 
-dropbox-api sync local\_path **dropbox:**/dropbox\_path
+dropbox-api sync \<source_dir\> dropbox:\<target_dir\>
 
     > dropbox-api sync /tmp/product dropbox:/work/src     
     upload background.html /work/src/background.html
@@ -202,7 +256,7 @@ copy file or directory.
 - alias
   - copy
 - syntax
-  - dropbox-api cp source\_file target\_file
+  - dropbox-api cp \<source_file\> \<target_file\>
 
 ### Example
 
@@ -215,7 +269,7 @@ move file or directory.
 - alias
   - move
 - syntax
-  - dropbox-api mv source\_file target\_file
+  - dropbox-api mv \<source_file\> \<target_file\>
 
 ### Example
 
@@ -230,7 +284,7 @@ make directory.
 - alias
   - mkpath
 - syntax
-  - dropbox-api mkdir directory
+  - dropbox-api mkdir \<directory\>
 
 ### Example
 
@@ -245,7 +299,7 @@ remove file or directory.
 - alias
   - rmtree
 - syntax
-  - dropbox-api rm file\_or\_directory
+  - dropbox-api rm \<file_or_directory\>
 
 ### Example
 
@@ -258,7 +312,7 @@ download file from dropbox.
 - alias
   - dl, download
 - syntax
-  - dropbox-api get **dropbox:**/download\_file local\_path
+  - dropbox-api get dropbox:\<dropbox_file\> <file>
 
 ### Example
 
@@ -271,7 +325,7 @@ upload file to dropbox.
 - alias
   - up, upload
 - syntax
-  - dropbox-api put upload\_file **dropbox:**/dropbox\_path
+  - dropbox-api put \<file\> dropbox:\<dropbox_dir\>
 
 ### Example
 
