@@ -326,5 +326,11 @@ Get your accound UID
 
     dropbox-api uid
 
+## Changes
+
+    Wed Apr  6 17:24:46 JST 2011
+        - Added sub command uid (sylvainfilteau)
+        - Added upload-to-dropbox command (sylvainfilteau)
+
 ## License
 Released under the [MIT license](http://creativecommons.org/licenses/MIT/).
