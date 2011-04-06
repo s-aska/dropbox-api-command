@@ -15,6 +15,7 @@ Dropbox API Wrapper Command
 - mkdir
 - get
 - put
+- uid
 
 ## Install
 
@@ -64,6 +65,7 @@ disp help.
         put   upload file
         get   download file
         sync  sync directory (local => dropbox or dropbox => local)
+		uid   get accound uid
 
     See 'dropbox-api help <command>' for more information on a specific command.
 
@@ -315,6 +317,14 @@ upload file to dropbox.
 ### Example
 
     dropbox-api put /tmp/foo.txt dropbox:/Public/
+
+## uid
+
+Get your accound UID
+
+### Example
+
+    dropbox-api uid
 
 ## License
 Released under the [MIT license](http://creativecommons.org/licenses/MIT/).

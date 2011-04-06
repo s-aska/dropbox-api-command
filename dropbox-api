@@ -73,6 +73,8 @@ if ($command eq 'ls' or $command eq 'list') {
     &list(@args);
 } elsif ($command eq 'find') {
     &find(@args);
+} elsif ($command eq 'uid') {
+    &uid();
 } elsif ($command eq 'copy' or $command eq 'cp') {
     &copy(@args);
 } elsif ($command eq 'move' or $command eq 'mv') {
@@ -188,6 +190,17 @@ sub help {
         Example
             dropbox-api mkdir Public/product/chrome-extentions/foo
         };
+    } elsif ($command eq 'uid') {
+        $help = q{
+        Name
+            dropbox-api-uid - Get your account uid
+        
+        SYNOPSIS
+            dropbox-api uid
+
+        Example
+            dropbox-api uid
+        };
     } elsif ($command eq 'delete' or $command eq 'rm' or $command eq 'rmtree') {
         $help = q{
         Name
@@ -256,6 +269,7 @@ sub help {
             put   upload file
             get   download file
             sync  sync directory (local => dropbox or dropbox => local)
+            uid   get accound uid
         
         See 'dropbox-api help <command>' for more information on a specific command.
         };
@@ -299,6 +313,11 @@ sub setup {
     chmod 0600, $config_file;
     
     exit(0);
+}
+
+sub uid {
+	my $info = $box->account_info();
+	print $info->{uid};
 }
 
 sub list {
