@@ -317,7 +317,7 @@ sub setup {
 
 sub uid {
 	my $info = $box->account_info();
-	print $info->{uid};
+	print $info->{uid}, "\n";
 }
 
 sub list {
