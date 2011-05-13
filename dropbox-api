@@ -14,9 +14,13 @@ use JSON;
 use Net::Dropbox::API;
 use Path::Class;
 
+my $prefix = '';
 if ($^O eq 'darwin') {
     require Encode::UTF8Mac;
     $Encode::Locale::ENCODING_LOCALE_FS = 'utf-8-mac';
+}
+if ($Net::Dropbox::API::VERSION == 1.5) {
+    $prefix = '/';
 }
 
 my $config_file = file( $ENV{'DROPBOX_CONF'} || ($ENV{'HOME'}, '.dropbox-api-config') );
@@ -41,7 +45,7 @@ my $human   = $opts{h};
 my $printf  = $opts{p};
 my $context = $opts{s} ? 'sandbox' : 'dropbox';
 
-if ($command eq 'setup') {
+if ($command eq 'setup' || !-f $config_file) {
     &setup();
 }
 
@@ -323,7 +327,7 @@ sub uid {
 sub list {
     my $remote_base = shift;
     $remote_base=~s|^/||;
-    my $list = $box->list($remote_base);
+    my $list = $box->list($prefix.$remote_base);
     for my $content (@{$list->{contents}}) {
         print &_line($content);
     }
@@ -361,7 +365,7 @@ sub find {
 sub _find {
     my ($remote_path, $callback) = @_;
     $remote_path=~s|^/||;
-    my $list = $box->list($remote_path);
+    my $list = $box->list($prefix.$remote_path);
     for my $content (@{$list->{contents}}) {
         $callback->($content);
         if ($content->{is_dir}) {
