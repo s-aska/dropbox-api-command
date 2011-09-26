@@ -13,6 +13,7 @@ use Getopt::Std;
 use JSON;
 use Net::Dropbox::API;
 use Path::Class;
+use URI::Escape qw(uri_escape_utf8);
 
 my $prefix = '';
 if ($^O eq 'darwin') {
@@ -22,6 +23,8 @@ if ($^O eq 'darwin') {
 if ($Net::Dropbox::API::VERSION == 1.5) {
     $prefix = '/';
 }
+
+my $unsafe = q{^a-zA-Z0-9_.!~*'()/-};
 
 my $config_file = file( $ENV{'DROPBOX_CONF'} || ($ENV{'HOME'}, '.dropbox-api-config') );
 
@@ -37,13 +40,14 @@ getopts('ndvDshp:', \%opts);
 
 push @args, @ARGV;
 
-my $dry     = $opts{n};
-my $delete  = $opts{d};
-my $verbose = $opts{v};
-my $debug   = $opts{D};
-my $human   = $opts{h};
-my $printf  = $opts{p};
-my $context = $opts{s} ? 'sandbox' : 'dropbox';
+my $dry      = $opts{n};
+my $delete   = $opts{d};
+my $verbose  = $opts{v};
+my $debug    = $opts{D};
+my $human    = $opts{h};
+my $printf   = $opts{p};
+my $noescape = $opts{E}; # if Net::Dropbox::API support uri_escape
+my $context  = $opts{s} ? 'sandbox' : 'dropbox';
 
 if ($command eq 'setup' || !-f $config_file) {
     &setup();
@@ -327,7 +331,7 @@ sub uid {
 sub list {
     my $remote_base = shift;
     $remote_base=~s|^/||;
-    my $list = $box->list($prefix.$remote_base);
+    my $list = $box->list($prefix.&_escape($remote_base));
     for my $content (@{$list->{contents}}) {
         print &_line($content);
     }
@@ -365,7 +369,7 @@ sub find {
 sub _find {
     my ($remote_path, $callback) = @_;
     $remote_path=~s|^/||;
-    my $list = $box->list($prefix.$remote_path);
+    my $list = $box->list($prefix.&_escape($remote_path));
     for my $content (@{$list->{contents}}) {
         $callback->($content);
         if ($content->{is_dir}) {
@@ -409,7 +413,7 @@ sub upload {
     $path=~s|^dropbox:/||
         or die "Usage: \n    dropbox-api upload /tmp/local.txt dropbox:/Public/";
     $path=~s|/$||;
-    my $res = $box->putfile($file, $path, $name);
+    my $res = $box->putfile($file, &_escape($path), $name);
     print Dumper($res), "\n" if $verbose;
 }
 
@@ -417,7 +421,7 @@ sub download {
     my ($path, $file) = @_;
     $path=~s|^dropbox:/||
         or die "Usage: \n    dropbox-api download dropbox:/Public/some.txt /tmp/local.txt";
-    my $res = $box->getfile($path, $file);
+    my $res = $box->getfile(&_escape($path), $file);
     print Dumper($res), "\n" if $verbose;
 }
 
@@ -493,7 +497,7 @@ sub sync_download {
                 return if $dry;
                 $local_path->dir->mkpath unless -d $local_path->dir;
                 my $local_path_tmp = $local_path . '.dropbox-api.tmp';
-                $box->getfile(substr($content->{path}, 1), $local_path_tmp);
+                $box->getfile(&_escape(substr($content->{path}, 1)), $local_path_tmp);
                 unless (rename($local_path_tmp, $local_path)) {
                     unlink($local_path_tmp);
                     warn "rename failure " . $local_path_tmp;
@@ -581,14 +585,14 @@ sub sync_upload {
                 if (($remote_size != $local_size) or
                     ($remote_epoch < $local_epoch)) {
                     printf "upload $rel_path $remote_path\n";
-                    $box->putfile("$local_path", substr($remote_path->dir, 1)) unless $dry;
+                    $box->putfile("$local_path", &_escape(substr($remote_path->dir, 1))) unless $dry;
                     push @makedirs, $rel_path;
                 } else {
                     printf "skip $rel_path\n" if $verbose;
                 }
             } elsif (-f $local_path) {
                 printf "upload $rel_path $remote_path\n";
-                $box->putfile("$local_path", substr($remote_path->dir, 1)) unless $dry;
+                $box->putfile("$local_path", &_escape(substr($remote_path->dir, 1))) unless $dry;
                 push @makedirs, $rel_path;
             } elsif (-d $local_path) {
                 return if grep { $_=~/^$rel_path/ } @makedirs;
@@ -613,6 +617,12 @@ sub sync_upload {
         $box->delete(substr($remote_path, 1)) unless $dry;
         push @deletes, $rel_path;
     }
+}
+
+sub _escape {
+    my $str = shift;
+    return $str if $noescape;
+    return uri_escape_utf8($str, $unsafe);
 }
 
 exit(0);
