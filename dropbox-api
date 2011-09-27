@@ -24,7 +24,7 @@ if ($Net::Dropbox::API::VERSION == 1.5) {
     $prefix = '/';
 }
 
-my $unsafe = q{^a-zA-Z0-9_.!~*'()/-};
+my $unsafe = q{^a-zA-Z0-9_.!*'()/-};
 
 my $config_file = file( $ENV{'DROPBOX_CONF'} || ($ENV{'HOME'}, '.dropbox-api-config') );
 
