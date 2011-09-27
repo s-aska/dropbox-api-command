@@ -24,7 +24,7 @@ if ($Net::Dropbox::API::VERSION == 1.5) {
     $prefix = '/';
 }
 
-my $unsafe = q{^a-zA-Z0-9_.!*'()/-};
+my $unsafe = q{^a-zA-Z0-9_./-};
 
 my $config_file = file( $ENV{'DROPBOX_CONF'} || ($ENV{'HOME'}, '.dropbox-api-config') );
 
@@ -622,7 +622,10 @@ sub sync_upload {
 sub _escape {
     my $str = shift;
     return $str if $noescape;
-    return uri_escape_utf8($str, $unsafe);
+    warn $str;
+    my $escape = uri_escape_utf8($str, $unsafe);
+    warn $escape;
+    return $escape;
 }
 
 exit(0);
