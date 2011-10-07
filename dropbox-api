@@ -622,9 +622,7 @@ sub sync_upload {
 sub _escape {
     my $str = shift;
     return $str if $noescape;
-    warn $str;
     my $escape = uri_escape_utf8($str, $unsafe);
-    warn $escape;
     return $escape;
 }
 
