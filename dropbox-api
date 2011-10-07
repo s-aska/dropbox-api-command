@@ -595,7 +595,7 @@ sub sync_upload {
                 $box->putfile("$local_path", &_escape(substr($remote_path->dir, 1))) unless $dry;
                 push @makedirs, $rel_path;
             } elsif (-d $local_path) {
-                return if grep { $_=~/^$rel_path/ } @makedirs;
+                return if grep { $_=~/^\Q$rel_path/ } @makedirs;
                 printf "mktree $rel_path $remote_path\n";
                 $box->mkdir(substr($remote_path, 1)) unless $dry;
                 push @makedirs, $rel_path;
@@ -611,7 +611,7 @@ sub sync_upload {
     
     my @deletes;
     for my $rel_path ( keys %$remote_map ) {
-        next if grep { $rel_path=~/^$_/ } @deletes;
+        next if grep { $rel_path=~/^\Q$_/ } @deletes;
         print "delete $rel_path\n";
         my $remote_path = catfile($remote_base, $rel_path);
         $box->delete(substr($remote_path, 1)) unless $dry;
