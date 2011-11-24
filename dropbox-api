@@ -11,20 +11,13 @@ use File::Basename qw(dirname basename);
 use File::Spec::Functions qw(abs2rel catfile);
 use Getopt::Std;
 use JSON;
-use Net::Dropbox::API;
 use Path::Class;
-use URI::Escape qw(uri_escape_utf8);
+use WebService::Dropbox;
 
-my $prefix = '';
 if ($^O eq 'darwin') {
     require Encode::UTF8Mac;
     $Encode::Locale::ENCODING_LOCALE_FS = 'utf-8-mac';
 }
-if ($Net::Dropbox::API::VERSION == 1.5) {
-    $prefix = '/';
-}
-
-my $unsafe = q{^a-zA-Z0-9_./-};
 
 my $config_file = file( $ENV{'DROPBOX_CONF'} || ($ENV{'HOME'}, '.dropbox-api-config') );
 
@@ -59,8 +52,8 @@ $config->{key} or die 'please set config key.';
 $config->{secret} or die 'please set config secret.';
 $config->{access_token} or die 'please set config access_token.';
 $config->{access_secret} or die 'please set config access_secret.';
-my $box = Net::Dropbox::API->new($config);
-$box->context($context);
+my $box = WebService::Dropbox->new($config);
+$box->root($context);
 
 # printf option
 my $strp;
@@ -227,7 +220,7 @@ sub help {
             dropbox-api-put - upload file
         
         SYNOPSIS
-            dropbox-api put <file> dropbox:<dropbox_dir>
+            dropbox-api put <file> dropbox:<dropbox_file>
 
         Example
             dropbox-api put README.md dropbox:/Public/product/dropbox-api/
@@ -301,7 +294,7 @@ sub setup {
     $config->{secret} = $secret;
 
     $config->{callback_url} = '';
-    my $box = Net::Dropbox::API->new($config);
+    my $box = WebService::Dropbox->new($config);
     my $login_link = $box->login;
     die $box->error if $box->error;
     print "URL: $login_link\n";
@@ -324,14 +317,13 @@ sub setup {
 }
 
 sub uid {
-	my $info = $box->account_info();
+	my $info = $box->account_info or die $box->error;
 	print $info->{uid}, "\n";
 }
 
 sub list {
     my $remote_base = shift;
-    $remote_base=~s|^/||;
-    my $list = $box->list($prefix.&_escape($remote_base));
+    my $list = $box->metadata($remote_base) or die $box->error;
     for my $content (@{$list->{contents}}) {
         print &_line($content);
     }
@@ -368,8 +360,7 @@ sub find {
 
 sub _find {
     my ($remote_path, $callback) = @_;
-    $remote_path=~s|^/||;
-    my $list = $box->list($prefix.&_escape($remote_path));
+    my $list = $box->metadata($remote_path);
     for my $content (@{$list->{contents}}) {
         $callback->($content);
         if ($content->{is_dir}) {
@@ -380,40 +371,36 @@ sub _find {
 
 sub copy {
     my ($src, $dst) = @_;
-    $src=~s|^/||;
-    $dst=~s|^/||;
-    my $res = $box->copy(decode('locale_fs', $src), decode('locale_fs', $dst));
+    my $res = $box->copy(decode('locale_fs', $src), decode('locale_fs', $dst)) or die $box->error;
     print Dumper($res), "\n" if $verbose;
 }
 
 sub move {
     my ($src, $dst) = @_;
-    $src=~s|^/||;
-    $dst=~s|^/||;
-    my $res = $box->move(decode('locale_fs', $src), decode('locale_fs', $dst));
+    my $res = $box->move(decode('locale_fs', $src), decode('locale_fs', $dst)) or die $box->error;
     print Dumper($res), "\n" if $verbose;
 }
 
 sub mkdir {
     my ($dir) = @_;
-    $dir=~s|^/||;
-    my $res = $box->mkdir(decode('locale_fs', $dir));
+    my $res = $box->create_folder(decode('locale_fs', $dir)) or die $box->error;
     print Dumper($res), "\n" if $verbose;
 }
 
 sub delete {
     my ($file_or_dir) = @_;
-    $file_or_dir=~s|^/||;
-    my $res = $box->delete(decode('locale_fs', $file_or_dir));
+    my $res = $box->delete(decode('locale_fs', $file_or_dir)) or die $box->error;
     print Dumper($res), "\n" if $verbose;
 }
 
 sub upload {
-    my ($file, $path, $name) = @_;
+    my ($file, $path) = @_;
     $path=~s|^dropbox:/||
-        or die "Usage: \n    dropbox-api upload /tmp/local.txt dropbox:/Public/";
-    $path=~s|/$||;
-    my $res = $box->putfile($file, &_escape($path), $name);
+        or die "Usage: \n    dropbox-api upload /tmp/local.txt dropbox:/Public/some.txt";
+    my $fh = file($file)->openr or die $!;
+    $path.= basename($file) if (! length $path) or $path=~m|/$|;
+    my $res = $box->files_put(decode('locale_fs', $path), $fh, { overwrite => 1 }) or die $box->error;
+    $fh->close;
     print Dumper($res), "\n" if $verbose;
 }
 
@@ -421,8 +408,9 @@ sub download {
     my ($path, $file) = @_;
     $path=~s|^dropbox:/||
         or die "Usage: \n    dropbox-api download dropbox:/Public/some.txt /tmp/local.txt";
-    my $res = $box->getfile(&_escape($path), $file);
-    print Dumper($res), "\n" if $verbose;
+    my $fh = file($file)->openw or die $!;
+    $box->files(decode('locale_fs', $path), $fh) or die $box->error;
+    $fh->close;
 }
 
 sub sync {
@@ -497,7 +485,7 @@ sub sync_download {
                 return if $dry;
                 $local_path->dir->mkpath unless -d $local_path->dir;
                 my $local_path_tmp = $local_path . '.dropbox-api.tmp';
-                $box->getfile(&_escape(substr($content->{path}, 1)), $local_path_tmp);
+                $box->files($content->{path}, file($local_path_tmp)->openw);
                 unless (rename($local_path_tmp, $local_path)) {
                     unlink($local_path_tmp);
                     warn "rename failure " . $local_path_tmp;
@@ -585,19 +573,21 @@ sub sync_upload {
                 if (($remote_size != $local_size) or
                     ($remote_epoch < $local_epoch)) {
                     printf "upload $rel_path $remote_path\n";
-                    $box->putfile("$local_path", &_escape(substr($remote_path->dir, 1))) unless $dry;
+                    $box->files_put(decode('locale_fs', $remote_path->dir . '/' . $local_path->basename),
+                        $local_path->openr, { overwrite => 1 }) unless $dry;
                     push @makedirs, $rel_path;
                 } else {
                     printf "skip $rel_path\n" if $verbose;
                 }
             } elsif (-f $local_path) {
                 printf "upload $rel_path $remote_path\n";
-                $box->putfile("$local_path", &_escape(substr($remote_path->dir, 1))) unless $dry;
+                $box->files_put(decode('locale_fs', $remote_path->dir . '/' . $local_path->basename),
+                    $local_path->openr, { overwrite => 1 }) unless $dry;
                 push @makedirs, $rel_path;
             } elsif (-d $local_path) {
                 return if grep { $_=~/^\Q$rel_path/ } @makedirs;
                 printf "mktree $rel_path $remote_path\n";
-                $box->mkdir(substr($remote_path, 1)) unless $dry;
+                $box->create_folder(decode('locale_fs', $remote_path)) unless $dry;
                 push @makedirs, $rel_path;
             } else {
                 printf "unknown $rel_path\n";
@@ -614,16 +604,9 @@ sub sync_upload {
         next if grep { $rel_path=~/^\Q$_/ } @deletes;
         print "delete $rel_path\n";
         my $remote_path = catfile($remote_base, $rel_path);
-        $box->delete(substr($remote_path, 1)) unless $dry;
+        $box->delete($remote_path) unless $dry;
         push @deletes, $rel_path;
     }
-}
-
-sub _escape {
-    my $str = shift;
-    return $str if $noescape;
-    my $escape = uri_escape_utf8($str, $unsafe);
-    return $escape;
 }
 
 exit(0);
