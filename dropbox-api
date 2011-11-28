@@ -38,11 +38,15 @@ push @args, @ARGV;
 my $dry      = $opts{n};
 my $delete   = $opts{d};
 my $verbose  = $opts{v};
-my $version  = $opts{V};
 my $debug    = $opts{D};
 my $human    = $opts{h};
 my $printf   = $opts{p};
 my $context  = $opts{s} ? 'sandbox' : 'dropbox';
+
+if ($command eq '-v') {
+    &help('version');
+    exit(0);
+}
 
 if ($command eq 'setup' || !-f $config_file) {
     &setup();
@@ -257,9 +261,22 @@ sub help {
             -n show what would have been transferred (dry-run)
             -d delete files that don't exist on sender
         };
+    } elsif ($command eq 'version') {
+        $help = qq{
+        This is dropbox-api-command, version $VERSION
+        
+        Copyright 2011, Shinichiro Aska
+        
+        Released under the MIT license.
+
+        Documentation
+            this system using "dropbox-api help".
+            If you have access to the Internet, point your browser at
+            https://github.com/s-aska/dropbox-api-command,
+            the dropbox-api-command Repository.
+        };
     } else {
         $help = qq{
-        Version: $VERSION
         Usage: dropbox-api <command> [args] [options]
 
         Available commands:
@@ -280,7 +297,7 @@ sub help {
     }
     $help=~s|^ {8}||mg;
     $help=~s|^\s*\n||;
-    print $help;
+    print "\n$help\n";
 }
 
 sub setup {
