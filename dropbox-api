@@ -14,6 +14,8 @@ use JSON;
 use Path::Class;
 use WebService::Dropbox;
 
+our $VERSION = '1.00';
+
 if ($^O eq 'darwin') {
     require Encode::UTF8Mac;
     $Encode::Locale::ENCODING_LOCALE_FS = 'utf-8-mac';
@@ -36,10 +38,10 @@ push @args, @ARGV;
 my $dry      = $opts{n};
 my $delete   = $opts{d};
 my $verbose  = $opts{v};
+my $version  = $opts{V};
 my $debug    = $opts{D};
 my $human    = $opts{h};
 my $printf   = $opts{p};
-my $noescape = $opts{E}; # if Net::Dropbox::API support uri_escape
 my $context  = $opts{s} ? 'sandbox' : 'dropbox';
 
 if ($command eq 'setup' || !-f $config_file) {
@@ -90,7 +92,7 @@ if ($command eq 'ls' or $command eq 'list') {
     &download(@args);
 } elsif ($command eq 'sync') {
     &sync(@args);
-} elsif ($command eq 'help') {
+} elsif ($command eq 'help' or (not length $command)) {
     &help(@args);
 } else {
     die "unknown command $command";
@@ -256,7 +258,8 @@ sub help {
             -d delete files that don't exist on sender
         };
     } else {
-        $help = q{
+        $help = qq{
+        Version: $VERSION
         Usage: dropbox-api <command> [args] [options]
 
         Available commands:
