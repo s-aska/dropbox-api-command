@@ -19,7 +19,7 @@ Dropbox API Wrapper Command
 
 ## Install
 
-    cpanm JSON Path::Class Net::Dropbox::API DateTime::Format::Strptime
+    cpanm JSON Path::Class WebService::Dropbox DateTime::Format::Strptime
     
     wget https://github.com/s-aska/dropbox-api-command/raw/master/dropbox-api
     cp dropbox-api ~/bin/dropbox-api
