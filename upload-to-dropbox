@@ -2,7 +2,7 @@
 ####################################################
 # Upload a file to dropbox and output public address
 
-dropbox-api put $1 dropbox:/Public
+dropbox-api put $1 dropbox:/Public/
 
 DRPBX_UID=`dropbox-api uid`
 FILE=`basename $1`
