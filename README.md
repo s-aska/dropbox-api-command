@@ -35,10 +35,16 @@ Dropbox API Wrapper Command
     > dropbox-api setup
     Please Input API Key: ***************
     Please Input API Secret: ***************
+    Please Input Access type
+      a ... App folder - Your app only needs access to a single folder within the user's Dropbox
+      f ... Full Dropbox - Your app needs access to the user's entire Dropbox
+    [a or f]: *
     URL: http://api.dropbox.com/0/oauth/authorize?oauth_token=***************&oauth_callback=
     Please Access URL and press Enter
-    OK?
-    success!
+    OK?    
+    success! try
+    > dropbox-api ls
+    > dropbox-api find /
 
 ## help
 

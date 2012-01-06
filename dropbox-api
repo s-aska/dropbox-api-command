@@ -14,7 +14,7 @@ use JSON;
 use Path::Class;
 use WebService::Dropbox;
 
-our $VERSION = '1.00';
+our $VERSION = '1.01';
 
 if ($^O eq 'darwin') {
     require Encode::UTF8Mac;
@@ -58,6 +58,11 @@ $config->{key} or die 'please set config key.';
 $config->{secret} or die 'please set config secret.';
 $config->{access_token} or die 'please set config access_token.';
 $config->{access_secret} or die 'please set config access_secret.';
+if ( my $access_level = delete $config->{access_level} ) {
+    if ($access_level eq 'a') {
+        $context = 'sandbox';
+    }
+}
 my $box = WebService::Dropbox->new($config);
 $box->root($context);
 
@@ -312,6 +317,17 @@ sub setup {
     chomp( my $secret = <STDIN> );
     die 'Get API Secret from https://www.dropbox.com/developers' unless $secret;
     $config->{secret} = $secret;
+
+    print "Please Input Access type\n";
+    print "  a ... App folder - Your app only needs access to a single folder within the user's Dropbox\n";
+    print "  f ... Full Dropbox - Your app needs access to the user's entire Dropbox\n";
+    print "[a or f]: ";
+    chomp( my $access_level = <STDIN> );
+    if ($access_level=~m|^[af]$|i) {
+        $config->{access_level} = lc($access_level) eq 'a' ? 'a' : 'f';
+    } else {
+        die 'invalid access level.';
+    }
 
     $config->{callback_url} = '';
     my $box = WebService::Dropbox->new($config);
