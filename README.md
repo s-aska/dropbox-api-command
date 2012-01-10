@@ -334,6 +334,9 @@ Get your accound UID
 
 ## Changes
 
+    Tue Jan 10 12:29:43 JST 2012
+        - Added Exception handling
+
     Wed Apr  6 17:24:46 JST 2011
         - Added sub command uid (sylvainfilteau)
         - Added upload-to-dropbox command (sylvainfilteau)

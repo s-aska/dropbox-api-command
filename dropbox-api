@@ -14,7 +14,7 @@ use JSON;
 use Path::Class;
 use WebService::Dropbox;
 
-our $VERSION = '1.01';
+our $VERSION = '1.02';
 
 if ($^O eq 'darwin') {
     require Encode::UTF8Mac;
@@ -521,7 +521,10 @@ sub sync_download {
                 return if $dry;
                 $local_path->dir->mkpath unless -d $local_path->dir;
                 my $local_path_tmp = $local_path . '.dropbox-api.tmp';
-                $box->files($content->{path}, file($local_path_tmp)->openw);
+                unless ($box->files($content->{path}, file($local_path_tmp)->openw)) {
+                    unlink($local_path_tmp);
+                    die $box->error;
+                }
                 unless (rename($local_path_tmp, $local_path)) {
                     unlink($local_path_tmp);
                     warn "rename failure " . $local_path_tmp;
@@ -610,7 +613,7 @@ sub sync_upload {
                     ($remote_epoch < $local_epoch)) {
                     printf "upload $rel_path $remote_path\n";
                     $box->files_put(decode('locale_fs', $remote_path->dir . '/' . $local_path->basename),
-                        $local_path->openr, { overwrite => 1 }) unless $dry;
+                        $local_path->openr, { overwrite => 1 }) or die $box->error unless $dry;
                     push @makedirs, $rel_path;
                 } else {
                     printf "skip $rel_path\n" if $verbose;
@@ -618,12 +621,12 @@ sub sync_upload {
             } elsif (-f $local_path) {
                 printf "upload $rel_path $remote_path\n";
                 $box->files_put(decode('locale_fs', $remote_path->dir . '/' . $local_path->basename),
-                    $local_path->openr, { overwrite => 1 }) unless $dry;
+                    $local_path->openr, { overwrite => 1 }) or die $box->error unless $dry;
                 push @makedirs, $rel_path;
             } elsif (-d $local_path) {
                 return if grep { $_=~/^\Q$rel_path/ } @makedirs;
                 printf "mktree $rel_path $remote_path\n";
-                $box->create_folder(decode('locale_fs', $remote_path)) unless $dry;
+                $box->create_folder(decode('locale_fs', $remote_path)) or die $box->error unless $dry;
                 push @makedirs, $rel_path;
             } else {
                 printf "unknown $rel_path\n";
@@ -640,7 +643,7 @@ sub sync_upload {
         next if grep { $rel_path=~/^\Q$_/ } @deletes;
         print "delete $rel_path\n";
         my $remote_path = catfile($remote_base, $rel_path);
-        $box->delete($remote_path) unless $dry;
+        $box->delete($remote_path) or die $box->error unless $dry;
         push @deletes, $rel_path;
     }
 }
