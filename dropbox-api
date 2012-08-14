@@ -525,6 +525,9 @@ sub sync_download {
                     unlink($local_path_tmp);
                     die $box->error;
                 }
+                unless (utime($remote_epoch, $remote_epoch, $local_path_tmp)) {
+                    warn "set modification time failure " .  $local_path;
+                }
                 unless (rename($local_path_tmp, $local_path)) {
                     unlink($local_path_tmp);
                     warn "rename failure " . $local_path_tmp;
