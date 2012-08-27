@@ -14,7 +14,9 @@ use JSON;
 use Path::Class;
 use WebService::Dropbox;
 
-our $VERSION = '1.03';
+our $VERSION = '1.04';
+
+my $limit = 10 * 1024 * 1024; # files_put_chunked method has large file support.
 
 if ($^O eq 'darwin') {
     require Encode::UTF8Mac;
@@ -435,7 +437,8 @@ sub upload {
         or die "Usage: \n    dropbox-api upload /tmp/local.txt dropbox:/Public/some.txt";
     my $fh = file($file)->openr or die $!;
     $path.= basename($file) if (! length $path) or $path=~m|/$|;
-    my $res = $box->files_put(decode('locale_fs', $path), $fh, { overwrite => 1 }) or die $box->error;
+    my $method = &put_method($fh);
+    my $res = $box->$method(decode('locale_fs', $path), $fh, { overwrite => 1 }) or die $box->error;
     $fh->close;
     print Dumper($res), "\n" if $verbose;
 }
@@ -615,7 +618,8 @@ sub sync_upload {
                 if (($remote_size != $local_size) or
                     ($remote_epoch < $local_epoch)) {
                     printf "upload $rel_path $remote_path\n";
-                    $box->files_put(decode('locale_fs', $remote_path->dir . '/' . $local_path->basename),
+                    my $method = &put_method($local_path);
+                    $box->$method(decode('locale_fs', $remote_path->dir . '/' . $local_path->basename),
                         $local_path->openr, { overwrite => 1 }) or die $box->error unless $dry;
                     push @makedirs, $rel_path;
                 } else {
@@ -623,7 +627,8 @@ sub sync_upload {
                 }
             } elsif (-f $local_path) {
                 printf "upload $rel_path $remote_path\n";
-                $box->files_put(decode('locale_fs', $remote_path->dir . '/' . $local_path->basename),
+                my $method = &put_method($local_path);
+                $box->$method(decode('locale_fs', $remote_path->dir . '/' . $local_path->basename),
                     $local_path->openr, { overwrite => 1 }) or die $box->error unless $dry;
                 push @makedirs, $rel_path;
             } elsif (-d $local_path) {
@@ -649,6 +654,11 @@ sub sync_upload {
         $box->delete($remote_path) or die $box->error unless $dry;
         push @deletes, $rel_path;
     }
+}
+
+sub put_method {
+    my $path = shift;
+    return $box->can('files_put_chunked') && -s $path > $limit ? 'files_put_chunked' : 'files_put';
 }
 
 exit(0);
