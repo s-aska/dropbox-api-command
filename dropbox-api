@@ -9,12 +9,13 @@ use Encode;
 use Encode::Locale;
 use File::Basename qw(dirname basename);
 use File::Spec::Functions qw(abs2rel catfile);
+use File::Temp;
 use Getopt::Std;
 use JSON;
 use Path::Class;
 use WebService::Dropbox;
 
-our $VERSION = '1.04';
+our $VERSION = '1.05';
 
 my $limit = 10 * 1024 * 1024; # files_put_chunked method has large file support.
 
@@ -82,6 +83,17 @@ my $format = {
     t => 'modified',
     r => 'revision'
 };
+
+# ProgressBar
+my $cols = 50;
+if ($verbose) {
+    eval {
+        my $stty = `stty -a`;
+        if ($stty =~ m|columns (\d+)| || $stty =~ m|(\d+) columns|) {
+            $cols = $1;
+        }
+    };
+}
 
 if ($command eq 'ls' or $command eq 'list') {
     &list(@args);
@@ -435,11 +447,9 @@ sub upload {
     my ($file, $path) = @_;
     $path=~s|^dropbox:/||
         or die "Usage: \n    dropbox-api upload /tmp/local.txt dropbox:/Public/some.txt";
-    my $fh = file($file)->openr or die $!;
+    my $local_path = file($file);
     $path.= basename($file) if (! length $path) or $path=~m|/$|;
-    my $method = &put_method($fh);
-    my $res = $box->$method(decode('locale_fs', $path), $fh, { overwrite => 1 }) or die $box->error;
-    $fh->close;
+    my $res = &put($local_path, decode('locale_fs', $path), { overwrite => 1 }) or die $box->error;
     print Dumper($res), "\n" if $verbose;
 }
 
@@ -618,18 +628,18 @@ sub sync_upload {
                 if (($remote_size != $local_size) or
                     ($remote_epoch < $local_epoch)) {
                     printf "upload $rel_path $remote_path\n";
-                    my $method = &put_method($local_path);
-                    $box->$method(decode('locale_fs', $remote_path->dir . '/' . $local_path->basename),
-                        $local_path->openr, { overwrite => 1 }) or die $box->error unless $dry;
+                    &put($local_path,
+                        decode('locale_fs', $remote_path->dir . '/' . $local_path->basename),
+                        { overwrite => 1 }) or die $box->error unless $dry;
                     push @makedirs, $rel_path;
                 } else {
                     printf "skip $rel_path\n" if $verbose;
                 }
             } elsif (-f $local_path) {
                 printf "upload $rel_path $remote_path\n";
-                my $method = &put_method($local_path);
-                $box->$method(decode('locale_fs', $remote_path->dir . '/' . $local_path->basename),
-                    $local_path->openr, { overwrite => 1 }) or die $box->error unless $dry;
+                &put($local_path,
+                    decode('locale_fs', $remote_path->dir . '/' . $local_path->basename),
+                    { overwrite => 1 }) or die $box->error unless $dry;
                 push @makedirs, $rel_path;
             } elsif (-d $local_path) {
                 return if grep { $_=~/^\Q$rel_path/ } @makedirs;
@@ -656,9 +666,65 @@ sub sync_upload {
     }
 }
 
-sub put_method {
-    my $path = shift;
-    return $box->can('files_put_chunked') && -s $path > $limit ? 'files_put_chunked' : 'files_put';
+sub put {
+    my ($file, $path, $params) = @_;
+
+    my $content   = $file->openr;
+    my $size      = -s $file;
+    my $threshold = 10 * 1024 * 1024; # files_put or files_put_chunked
+
+    return $box->files_put($path, $content, $params) if $size < $threshold;
+    return $box->files_put($path, $content, $params) unless $box->can('files_put_chunked');
+    return $box->files_put_chunked($path, $content, $params) unless $verbose;
+
+    my $limit = 4 * 1024 * 1024; # A typical chunk is 4 MB
+
+    local $| = 1;
+    my $upload;
+    $upload = sub {
+        my $data = shift;
+        my $buf;
+        my $total = $limit;
+        my $chunk = 1024;
+        my $tmp = File::Temp->new;
+        while (my $read = read($content, $buf, $chunk)) {
+            $tmp->print($buf);
+            $total -= $read;
+            if ($chunk > $total) {
+                $chunk = $total;
+            }
+            last unless $chunk;
+        }
+
+        if ($total == $limit) {
+            $data->{upload_id} or die $file . ' read error.';
+            print "\n";
+            return $box->commit_chunked_upload(
+                $path, {
+                    upload_id => $data->{upload_id},
+                    ( $params ? %$params : () )
+                }) or die $box->error;
+        }
+
+        $tmp->flush;
+        $tmp->seek(0, 0);
+        $data = $box->chunked_upload($tmp, {
+            ( $data   ? %$data   : () ),
+            ( $params ? %$params : () )
+        }) or die $box->error;
+
+        # ProgressBar
+        my $rate = sprintf '%2.1d%', $data->{offset} / $size * 100;
+        my $bar = '=' x int(($cols - length($rate) - 4) * $data->{offset} / $size);
+        my $space = ' ' x ($cols - length($rate) - length($bar) - 4);
+        printf "\r%s [%s>%s]", $rate, $bar, $space;
+
+        $upload->({
+            upload_id => $data->{upload_id},
+            offset    => $data->{offset}
+        });
+    };
+    $upload->();
 }
 
 exit(0);
