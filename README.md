@@ -51,8 +51,8 @@ Dropbox API Wrapper Command
 
 ### OS X (Homebrew)
 
+    curl -L http://cpanmin.us | perl - --sudo JSON Path::Class WebService::Dropbox DateTime::Format::Strptime Encode::Locale Encode::UTF8Mac
     brew install --HEAD https://github.com/s-aska/homebrew/raw/master/Library/Formula/dropbox-api.rb
-    cpanm --sudo JSON Path::Class WebService::Dropbox DateTime::Format::Strptime Encode::Locale Encode::UTF8Mac
 
 ### Get API Key and API Secret
 
