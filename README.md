@@ -26,7 +26,7 @@ Dropbox API Wrapper Command
 ### Ubuntu
 
     apt-get install make gcc libssl-dev
-    wget -O - http://cpanmin.us | perl - --sudo JSON Path::Class WebService::Dropbox DateTime::Format::Strptime Encode::Locale
+    wget -O - http://cpanmin.us | perl - JSON Path::Class WebService::Dropbox DateTime::Format::Strptime Encode::Locale
     wget https://github.com/s-aska/dropbox-api-command/raw/master/dropbox-api
     cp dropbox-api /bin/dropbox-api
     chmod +x /bin/dropbox-api
@@ -34,7 +34,7 @@ Dropbox API Wrapper Command
 ### CentOS
 
     yum install gcc gcc-c++ openssl-devel
-    wget -O - http://cpanmin.us | perl - --sudo JSON Path::Class WebService::Dropbox DateTime::Format::Strptime Encode::Locale
+    wget -O - http://cpanmin.us | perl - JSON Path::Class WebService::Dropbox DateTime::Format::Strptime Encode::Locale
     wget https://github.com/s-aska/dropbox-api-command/raw/master/dropbox-api
     cp dropbox-api /bin/dropbox-api
     chmod +x /bin/dropbox-api
