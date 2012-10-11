@@ -39,7 +39,7 @@ Dropbox API Wrapper Command
     cp dropbox-api /bin/dropbox-api
     chmod +x /bin/dropbox-api
 
-### OS X
+### OS X (Standard)
 
     # Install Command Line Tools for Xcode
     open https://www.google.com/search?q=Command+Line+Tools+for+Xcode
@@ -48,6 +48,11 @@ Dropbox API Wrapper Command
     curl -LO https://github.com/s-aska/dropbox-api-command/raw/master/dropbox-api
     cp dropbox-api ~/bin/dropbox-api
     chmod +x ~/bin/dropbox-api
+
+### OS X (Homebrew)
+
+    brew install --HEAD https://github.com/s-aska/homebrew/raw/master/Library/Formula/dropbox-api.rb
+    cpanm --sudo JSON Path::Class WebService::Dropbox DateTime::Format::Strptime Encode::Locale Encode::UTF8Mac
 
 ### Get API Key and API Secret
 
