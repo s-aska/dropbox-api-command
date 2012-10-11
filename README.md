@@ -19,11 +19,11 @@ Dropbox API Wrapper Command
 
 ## Install
 
-### Install on FreeBSD
+### FreeBSD
 
     pkg_add -r dropbox-api-command
 
-### Install on Ubuntu
+### Ubuntu
 
     apt-get install make gcc libssl-dev
     wget -O - http://cpanmin.us | perl - JSON Path::Class WebService::Dropbox DateTime::Format::Strptime Encode::Locale
@@ -31,7 +31,7 @@ Dropbox API Wrapper Command
     cp dropbox-api /bin/dropbox-api
     chmod +x /bin/dropbox-api
 
-### Install on CentOS
+### CentOS
 
     yum install gcc gcc-c++ openssl-devel
     wget -O - http://cpanmin.us | perl - JSON Path::Class WebService::Dropbox DateTime::Format::Strptime Encode::Locale
@@ -39,7 +39,7 @@ Dropbox API Wrapper Command
     cp dropbox-api /bin/dropbox-api
     chmod +x /bin/dropbox-api
 
-#### Install on OSX
+### OS X
 
     # Install Command Line Tools for Xcode
     open https://www.google.com/search?q=Command+Line+Tools+for+Xcode
