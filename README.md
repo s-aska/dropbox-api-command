@@ -17,16 +17,35 @@ Dropbox API Wrapper Command
 - put
 - uid
 
-## Install
+## Install on FreeBSD
 
-    cpanm JSON Path::Class WebService::Dropbox DateTime::Format::Strptime Encode::Locale
+    pkg_add -r dropbox-api-command
+
+## Install on Ubuntu
+
+    apt-get install make gcc libssl-dev
+    wget -O - http://cpanmin.us | perl - JSON Path::Class WebService::Dropbox DateTime::Format::Strptime Encode::Locale
     wget https://github.com/s-aska/dropbox-api-command/raw/master/dropbox-api
-    cp dropbox-api ~/bin/dropbox-api
-    chmod +x ~/bin/dropbox-api
+    cp dropbox-api /bin/dropbox-api
+    chmod +x /bin/dropbox-api
+
+## Install on CentOS
+
+    yum install gcc gcc-c++ openssl-devel
+    wget -O - http://cpanmin.us | perl - JSON Path::Class WebService::Dropbox DateTime::Format::Strptime Encode::Locale
+    wget https://github.com/s-aska/dropbox-api-command/raw/master/dropbox-api
+    cp dropbox-api /bin/dropbox-api
+    chmod +x /bin/dropbox-api
 
 #### Install on OSX
 
-    cpanm Encode::UTF8Mac
+    # Install Command Line Tools for Xcode
+    open https://www.google.com/search?q=Command+Line+Tools+for+Xcode
+
+    curl -L http://cpanmin.us | perl - --sudo JSON Path::Class WebService::Dropbox DateTime::Format::Strptime Encode::Locale Encode::UTF8Mac
+    curl -LO https://github.com/s-aska/dropbox-api-command/raw/master/dropbox-api
+    cp dropbox-api ~/bin/dropbox-api
+    chmod +x ~/bin/dropbox-api
 
 ### Get API Key and API Secret
 
@@ -44,7 +63,7 @@ Dropbox API Wrapper Command
     [a or f]: *
     URL: http://api.dropbox.com/0/oauth/authorize?oauth_token=***************&oauth_callback=
     Please Access URL and press Enter
-    OK?    
+    OK?
     success! try
     > dropbox-api ls
     > dropbox-api find /
@@ -136,7 +155,7 @@ print format.
     > dropbox-api ls /product -p "%d\t%s\t%TY/%Tm/%Td %TH:%TM:%TS\t%p\n"
     d       -       2011/02/24 06:58:00     /product/chrome-extentions
     -       287.7KB 2010/12/26 21:55:59     /product/ex.zip
-    
+
         %d ... is_dir ( d: dir, -: file )
         %p ... path
         %b ... bytes
@@ -146,7 +165,7 @@ print format.
         %M ... mime_type
         %t ... modified time
         %r ... revision
-    
+
         %Tk ... DateTime ‘strftime’ function
                 <http://search.cpan.org/dist/DateTime/lib/DateTime.pm#strftime_Patterns>
 
@@ -195,7 +214,7 @@ dropbox-api sync dropbox:&lt;source\_dir&gt; &lt;target\_dir&gt; [options]
 
 dropbox-api sync &lt;source\_dir&gt; dropbox:&lt;target\_dir&gt; [options]
 
-    > dropbox-api sync /tmp/product dropbox:/work/src     
+    > dropbox-api sync /tmp/product dropbox:/work/src
     upload background.html /work/src/background.html
     upload external.png /work/src/external.png
     upload icon-128.png /work/src/icon-128.png
