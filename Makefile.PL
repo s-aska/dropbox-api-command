@@ -1,5 +1,6 @@
 if (-e 'dropbox-api') {
     print STDERR "Generating bin/dropbox-api from dropbox-api\n";
+    mkdir 'bin' unless -d 'bin';
     open my $in,  "<dropbox-api"     or die $!;
     open my $out, ">bin/dropbox-api" or die $!;
     while (<$in>) {
