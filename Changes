@@ -1,0 +1,18 @@
+Revision history for dropbox-api
+
+1.05    Aug 28, 2012
+        - added ProgressBar. ( need -v option )
+
+1.04    Aug 27, 2012
+        - large file support. ( over 150 MB )
+
+1.03    Aug 14, 2012
+        - set modification time.
+        - support windows homepath.
+
+1.02    Jan 10, 2012
+        - Added Exception handling
+
+1.01    Apr 5, 2012
+        - Added sub command uid (sylvainfilteau)
+        - Added upload-to-dropbox command (sylvainfilteau)

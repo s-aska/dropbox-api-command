@@ -1,0 +1,6 @@
+bin/dropbox-api
+Changes
+lib/App/dropboxapi.pm
+Makefile.PL
+MANIFEST			This list of files
+t/happy_cpantesters.t
