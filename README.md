@@ -17,49 +17,37 @@ Dropbox API Wrapper Command
 - put
 - uid
 
-## Install
+## Install and Setup
 
-### FreeBSD
+### 1. Install
+
+#### 1-a) FreeBSD
 
     pkg_add -r dropbox-api-command
 
-### Ubuntu
+#### 1-b) Ubuntu
 
-    apt-get install make gcc libssl-dev
-    wget -O - http://cpanmin.us | perl - JSON Path::Class WebService::Dropbox DateTime::Format::Strptime Encode::Locale
-    wget https://github.com/s-aska/dropbox-api-command/raw/master/dropbox-api
-    cp dropbox-api /bin/dropbox-api
-    chmod +x /bin/dropbox-api
+    apt-get install make gcc libssl-dev wget
+    wget -O - http://cpanmin.us | perl - https://github.com/s-aska/dropbox-api-command/tarball/master
 
-### CentOS
+#### 1-c) CentOS
 
-    yum install gcc gcc-c++ openssl-devel
-    wget -O - http://cpanmin.us | perl - JSON Path::Class WebService::Dropbox DateTime::Format::Strptime Encode::Locale
-    wget https://github.com/s-aska/dropbox-api-command/raw/master/dropbox-api
-    cp dropbox-api /bin/dropbox-api
-    chmod +x /bin/dropbox-api
+    yum install gcc gcc-c++ openssl-devel wget
+    wget -O - http://cpanmin.us | perl - https://github.com/s-aska/dropbox-api-command/tarball/master
 
-### OS X (Standard)
+#### 1-d) OS X
 
     # Install Command Line Tools for Xcode
     open https://www.google.com/search?q=Command+Line+Tools+for+Xcode
 
-    curl -L http://cpanmin.us | perl - --sudo JSON Path::Class WebService::Dropbox DateTime::Format::Strptime Encode::Locale Encode::UTF8Mac
-    curl -LO https://github.com/s-aska/dropbox-api-command/raw/master/dropbox-api
-    cp dropbox-api ~/bin/dropbox-api
-    chmod +x ~/bin/dropbox-api
+    curl -L http://cpanmin.us | perl - --sudo https://github.com/s-aska/dropbox-api-command/tarball/master
 
-### OS X (Homebrew)
-
-    curl -L http://cpanmin.us | perl - --sudo JSON Path::Class WebService::Dropbox DateTime::Format::Strptime Encode::Locale Encode::UTF8Mac
-    brew install --HEAD https://github.com/s-aska/homebrew/raw/master/Library/Formula/dropbox-api.rb
-
-### Get API Key and API Secret
+### 2. Get API Key and API Secret
 
     https://www.dropbox.com/developers
     My Apps => Create an App
 
-### Get Access Token and Access Secret
+### 3. Get Access Token and Access Secret
 
     > dropbox-api setup
     Please Input API Key: ***************
@@ -360,15 +348,6 @@ Get your accound UID
 ### Example
 
     dropbox-api uid
-
-## Changes
-
-    Tue Jan 10 12:29:43 JST 2012
-        - Added Exception handling
-
-    Wed Apr  6 17:24:46 JST 2011
-        - Added sub command uid (sylvainfilteau)
-        - Added upload-to-dropbox command (sylvainfilteau)
 
 ## License
 Released under the [MIT license](http://creativecommons.org/licenses/MIT/).
