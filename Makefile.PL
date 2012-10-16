@@ -5,7 +5,7 @@ if (-e 'dropbox-api') {
     open my $out, ">bin/dropbox-api" or die $!;
     while (<$in>) {
         s|^#!/usr/bin/env perl|#!perl|; # so MakeMaker can fix it
-        print $out $_
+        print $out $_;
     }
 }
 use ExtUtils::MakeMaker;
@@ -17,12 +17,12 @@ WriteMakefile(
         'ExtUtils::MakeMaker' => 6.30,
         'ExtUtils::Install' => 1.43,
         'JSON' => 0,
-        'Path::Class' => 0,
-        'WebService::Dropbox' => 0,
+        'Path::Class' => 0.26,
+        'WebService::Dropbox' => 1.11,
         'DateTime::Format::Strptime' => 0,
         'Encode::Locale' => 0,
         ($^O eq 'darwin' ? ('Encode::UTF8Mac' => 0) : ()),
     },
-    LICENSE => 'perl',
+    LICENSE => 'mit',
     EXE_FILES => [ 'bin/dropbox-api' ],
 );

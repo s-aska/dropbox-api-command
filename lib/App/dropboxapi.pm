@@ -1,5 +1,5 @@
 package App::dropboxapi;
-our $VERSION = "1.05";
+our $VERSION = "1.05b";
 
 =head1 NAME
 
@@ -77,7 +77,7 @@ dropbox-api help [<command>]
             %M ... mime_type
             %t ... modified time
             %r ... revision
-            %Tk ... DateTime ‘strftime’ function
+            %Tk ... DateTime 'strftime' function
 
 =head2 ls
 
