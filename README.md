@@ -27,15 +27,15 @@ Dropbox API Wrapper Command
 
 #### 1-b) Ubuntu
 
-    apt-get install make gcc libssl-dev wget
+    sudo apt-get install make gcc libssl-dev wget
     wget https://raw.github.com/miyagawa/cpanminus/master/cpanm
-    perl cpanm App::dropboxapi
+    sudo perl cpanm App::dropboxapi
 
 #### 1-c) CentOS
 
-    yum install gcc gcc-c++ openssl-devel wget
+    sudo yum install gcc gcc-c++ openssl-devel wget
     wget https://raw.github.com/miyagawa/cpanminus/master/cpanm
-    perl cpanm App::dropboxapi
+    sudo perl cpanm App::dropboxapi
 
 #### 1-d) OS X
 
@@ -43,7 +43,7 @@ Dropbox API Wrapper Command
     open https://www.google.com/search?q=Command+Line+Tools+for+Xcode
 
     curl -O https://raw.github.com/miyagawa/cpanminus/master/cpanm
-    perl cpanm --sudo App::dropboxapi
+    sudo perl cpanm App::dropboxapi
 
 ### 2. Get API Key and API Secret
 
