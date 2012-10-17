@@ -1,5 +1,5 @@
 package App::dropboxapi;
-our $VERSION = "1.05b";
+our $VERSION = "1.05c";
 
 =head1 NAME
 
@@ -127,7 +127,7 @@ print format.
         %t ... modified time
         %r ... revision
 
-        %Tk ... DateTime ‘strftime’ function
+        %Tk ... DateTime 'strftime' function
                 <http://search.cpan.org/dist/DateTime/lib/DateTime.pm#strftime_Patterns>
 
 =head2 find
