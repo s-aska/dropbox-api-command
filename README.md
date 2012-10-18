@@ -33,7 +33,10 @@ Dropbox API Wrapper Command
 
 #### 1-c) CentOS
 
+    # CentOS 5
     sudo yum install gcc gcc-c++ openssl-devel wget
+    # CentOS 6
+    sudo yum install gcc gcc-c++ openssl-devel wget perl-devel
     wget https://raw.github.com/miyagawa/cpanminus/master/cpanm
     sudo perl cpanm App::dropboxapi
 
