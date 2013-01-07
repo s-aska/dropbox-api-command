@@ -1,5 +1,9 @@
 Revision history for dropbox-api
 
+1.06    Jan  8, 2013
+        - added -e option, it is "HTTP_PROXY" and "NO_PROXY" environment variable support.
+        - fix UTF-8-mac filename bug
+
 1.05    Aug 28, 2012
         - added ProgressBar. ( need -v option )
 
@@ -11,8 +15,8 @@ Revision history for dropbox-api
         - support windows homepath.
 
 1.02    Jan 10, 2012
-        - Added Exception handling
+        - added Exception handling
 
 1.01    Apr 5, 2012
-        - Added sub command uid (sylvainfilteau)
-        - Added upload-to-dropbox command (sylvainfilteau)
+        - added sub command uid (sylvainfilteau)
+        - added upload-to-dropbox command (sylvainfilteau)

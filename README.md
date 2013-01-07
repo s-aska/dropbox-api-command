@@ -69,6 +69,12 @@ Dropbox API Wrapper Command
     > dropbox-api ls
     > dropbox-api find /
 
+### 4. How to use Proxy
+
+Please use -e option.
+
+    > HTTP_PROXY="http://127.0.0.1:8888" dropbox-api setup -e
+
 ## help
 
 disp help.
@@ -94,7 +100,11 @@ disp help.
         put   upload file
         get   download file
         sync  sync directory (local => dropbox or dropbox => local)
-		uid   get accound uid
+        uid   get accound uid
+
+    Common Options
+        -e enable env_proxy ( HTTP_PROXY, NO_PROXY )
+        -D enable debug
 
     See 'dropbox-api help <command>' for more information on a specific command.
 
@@ -354,6 +364,23 @@ Get your accound UID
 ### Example
 
     dropbox-api uid
+
+## Tips
+
+### Retry
+
+    #!/bin/bash
+
+    command='dropbox-api sync dropbox:/test/ /Users/aska/test/ -vde'
+
+    NEXT_WAIT_TIME=0
+    EXIT_CODE=0
+    until $command || [ $NEXT_WAIT_TIME -eq 4 ]; do
+        EXIT_CODE=$?
+        sleep $NEXT_WAIT_TIME
+        let NEXT_WAIT_TIME=NEXT_WAIT_TIME+1
+    done
+    exit $EXIT_CODE
 
 ## License
 Released under the [MIT license](http://creativecommons.org/licenses/MIT/).

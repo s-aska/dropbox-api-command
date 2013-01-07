@@ -15,7 +15,7 @@ use JSON;
 use Path::Class;
 use WebService::Dropbox;
 
-our $VERSION = '1.05';
+our $VERSION = '1.06';
 
 my $limit = 10 * 1024 * 1024; # files_put_chunked method has large file support.
 
@@ -23,6 +23,9 @@ if ($^O eq 'darwin') {
     require Encode::UTF8Mac;
     $Encode::Locale::ENCODING_LOCALE_FS = 'utf-8-mac';
 }
+
+binmode STDIN,  ":utf8";
+binmode STDOUT, ":utf8";
 
 my $config_file = file( $ENV{'DROPBOX_CONF'} || ($ENV{'HOME'} || $ENV{'HOMEPATH'}, '.dropbox-api-config') );
 
@@ -34,17 +37,18 @@ for (@{[@ARGV]}) {
 }
 
 my %opts;
-getopts('ndvDshp:', \%opts);
+getopts('ndvDsherp:', \%opts);
 
 push @args, @ARGV;
 
-my $dry      = $opts{n};
-my $delete   = $opts{d};
-my $verbose  = $opts{v};
-my $debug    = $opts{D};
-my $human    = $opts{h};
-my $printf   = $opts{p};
-my $context  = $opts{s} ? 'sandbox' : 'dropbox';
+my $dry       = $opts{n};
+my $delete    = $opts{d};
+my $verbose   = $opts{v};
+my $debug     = $opts{D};
+my $human     = $opts{h};
+my $printf    = $opts{p};
+my $context   = $opts{s} ? 'sandbox' : 'dropbox';
+my $env_proxy = $opts{e};
 
 if ($command eq '-v') {
     &help('version');
@@ -68,6 +72,7 @@ if ( my $access_level = delete $config->{access_level} ) {
 }
 my $box = WebService::Dropbox->new($config);
 $box->root($context);
+$box->env_proxy if $env_proxy;
 
 # printf option
 my $strp;
@@ -95,6 +100,8 @@ if ($verbose) {
     };
 }
 
+my $exit_code = 0;
+
 if ($command eq 'ls' or $command eq 'list') {
     &list(@args);
 } elsif ($command eq 'find') {
@@ -121,11 +128,11 @@ if ($command eq 'ls' or $command eq 'list') {
     die "unknown command $command";
 }
 
-exit(0);
+exit($exit_code);
 
 sub help {
     my ($command) = @_;
-    
+
     my $help;
     if ($command eq 'ls' or $command eq 'list') {
         $help = q{
@@ -158,7 +165,7 @@ sub help {
         $help = q{
         Name
             dropbox-api-find - walk a file hierarchy
-        
+
         SYNOPSIS
             dropbox-api find <dropbox_path> [options]
 
@@ -185,7 +192,7 @@ sub help {
         $help = q{
         Name
             dropbox-api-cp - copy file or directory
-        
+
         SYNOPSIS
             dropbox-api cp <source_file> <target_file>
 
@@ -197,7 +204,7 @@ sub help {
         $help = q{
         Name
             dropbox-api-mv - move file or directory
-        
+
         SYNOPSIS
             dropbox-api mv <source_file> <target_file>
 
@@ -209,7 +216,7 @@ sub help {
         $help = q{
         Name
             dropbox-api-mkdir - make directory (Create intermediate directories as required)
-        
+
         SYNOPSIS
             dropbox-api mkdir <directory>
 
@@ -220,7 +227,7 @@ sub help {
         $help = q{
         Name
             dropbox-api-uid - Get your account uid
-        
+
         SYNOPSIS
             dropbox-api uid
 
@@ -231,7 +238,7 @@ sub help {
         $help = q{
         Name
             dropbox-api-rm - remove file or directory (Attempt to remove the file hierarchy rooted in each file argument)
-        
+
         SYNOPSIS
             dropbox-api rm <file_or_directory>
 
@@ -243,7 +250,7 @@ sub help {
         $help = q{
         Name
             dropbox-api-put - upload file
-        
+
         SYNOPSIS
             dropbox-api put <file> dropbox:<dropbox_file>
 
@@ -254,7 +261,7 @@ sub help {
         $help = q{
         Name
             dropbox-api-get - download file
-        
+
         SYNOPSIS
             dropbox-api get dropbox:<dropbox_file> <file>
 
@@ -265,7 +272,7 @@ sub help {
         $help = q{
         Name
             dropbox-api-sync - sync directory
-        
+
         SYNOPSIS
             dropbox-api sync dropbox:<source_dir> <target_dir> [options]
             dropbox-api sync <source_dir> dropbox:<target_dir> [options]
@@ -274,7 +281,7 @@ sub help {
             dropbox-api sync dropbox:/Public/product/dropbox-api/ ~/work/dropbox-api/
             dropbox-api sync ~/work/dropbox-api/ dropbox:/Public/product/dropbox-api/ -vdn
             dropbox-api sync ~/work/dropbox-api/ dropbox:/Public/product/dropbox-api/ -d
-        
+
         Options
             -v increase verbosity
             -n show what would have been transferred (dry-run)
@@ -283,9 +290,9 @@ sub help {
     } elsif ($command eq 'version') {
         $help = qq{
         This is dropbox-api-command, version $VERSION
-        
+
         Copyright 2011, Shinichiro Aska
-        
+
         Released under the MIT license.
 
         Documentation
@@ -310,7 +317,11 @@ sub help {
             get   download file
             sync  sync directory (local => dropbox or dropbox => local)
             uid   get accound uid
-        
+
+        Common Options
+            -e enable env_proxy ( HTTP_PROXY, NO_PROXY )
+            -D enable debug
+
         See 'dropbox-api help <command>' for more information on a specific command.
         };
     }
@@ -345,6 +356,7 @@ sub setup {
 
     $config->{callback_url} = '';
     my $box = WebService::Dropbox->new($config);
+    $box->env_proxy if $env_proxy;
     my $login_link = $box->login;
     die $box->error if $box->error;
     print "URL: $login_link\n";
@@ -362,13 +374,13 @@ sub setup {
     $config_file->openw->print(encode_json($config));
 
     chmod 0600, $config_file;
-    
+
     exit(0);
 }
 
 sub uid {
-	my $info = $box->account_info or die $box->error;
-	print $info->{uid}, "\n";
+    my $info = $box->account_info or die $box->error;
+    print $info->{uid}, "\n";
 }
 
 sub list {
@@ -410,8 +422,15 @@ sub find {
 
 sub _find {
     my ($remote_path, $callback) = @_;
-    my $list = $box->metadata($remote_path);
+    my $list = $box->metadata($remote_path) or die $box->error;
+    die "is not dir $remote_path" unless $list->{is_dir};
+    if ($list->{is_deleted}) {
+        warn "is deleted $remote_path";
+        $exit_code = 1;
+        return;
+    }
     for my $content (@{$list->{contents}}) {
+        next if $content->{is_deleted};
         $callback->($content);
         if ($content->{is_dir}) {
             &_find($content->{path}, $callback);
@@ -464,7 +483,7 @@ sub download {
 
 sub sync {
     my ($arg1, $arg2) = @_;
-    
+
     my ($remote_base, $local_base, $command);
     if ($arg1=~/^dropbox:/ and $arg2!~/^dropbox:/) {
         ($remote_base, $local_base) = ($arg1, $arg2);
@@ -476,47 +495,50 @@ sub sync {
         die "Usage: \n    dropbox-api sync dropbox:/Public/ /tmp/pub/\n" .
                    "or    dropbox-api sync /tmp/pub/ dropbox:/Public/";
     }
-    
+
+    die "missing $local_base" unless -d $local_base;
+
     $local_base = dir(abs_path($local_base));
-    
-    $remote_base = $remote_base;
-    
+
+    $remote_base = decode('locale_fs', $remote_base);
+
     $remote_base=~s|^dropbox:/|/|;
-    
+
     print "!! enable dry run !!\n" if $dry;
     print "remote_base: $remote_base\n" if $verbose;
     print "local_base: $local_base\n" if $verbose;
-    
+
     $command->($remote_base, $local_base);
 }
 
 sub sync_download {
     my ($remote_base, $local_base) = @_;
-    
+
     print "** download **\n" if $verbose;
-    
+
     my $strp = new DateTime::Format::Strptime( pattern => '%a, %d %b %Y %T %z' );
-    
+
     my $remote_map = {};
-    
+    my $remote_inode_map = {};
+
     &_find($remote_base, sub {
         my $content = shift;
-        my $remote_path = encode('locale_fs', $content->{path});
+        my $remote_path = $content->{path};
         my $rel_path = abs2rel($remote_path, $remote_base);
+        my $rel_path_enc = encode('locale_fs', $rel_path);
         $remote_map->{$rel_path}++;
         printf "check: %s\n", $rel_path if $debug;
+        my $local_path = $content->{is_dir} ? dir($local_base, $rel_path_enc) : file($local_base, $rel_path_enc);
         if ($content->{is_dir}) {
-            my $local_path = dir($local_base, $rel_path);
             printf "remote: %s\n", $remote_path if $debug;
             printf "local:  %s\n", $local_path if $debug;
             if (!-d $local_path) {
                 $local_path->mkpath unless $dry;
-                printf "mkpath %s\n", $local_path;
+                printf "mkpath %s\n", decode('locale_fs', $local_path);
             } else {
                 printf "skip %s\n", $rel_path if $verbose;
             }
         } else {
-            my $local_path = file($local_base, $rel_path);
             my $remote_epoch = $strp->parse_datetime($content->{modified})->epoch;
             my $local_epoch = -f $local_path ? $local_path->stat->mtime : '-';
             my $remote_size = $content->{bytes};
@@ -525,36 +547,50 @@ sub sync_download {
                 $remote_epoch, $remote_size, $remote_path if $debug;
             printf "local:  %10s %10s %s\n",
                 $local_epoch, $local_size, $local_path if $debug;
-            
+
             if ((!-f $local_path) or
                 ($remote_size != $local_size) or
                 ($remote_epoch > $local_epoch)) {
-                printf "download %s\n", $local_path;
-                printf "mkpath %s\n", $local_path->dir unless -d $local_path->dir;
-                return if $dry;
+                if ($dry) {
+                    printf "download %s\n", decode('locale_fs', $local_path);
+                    return;
+                }
+                # not displayed in the dry-run for the insurance
+                printf "mkpath %s\n", decode('locale_fs', $local_path->dir) unless -d $local_path->dir;
                 $local_path->dir->mkpath unless -d $local_path->dir;
                 my $local_path_tmp = $local_path . '.dropbox-api.tmp';
-                unless ($box->files($content->{path}, file($local_path_tmp)->openw)) {
+                my $fh = file($local_path_tmp)->openw;
+                if ($box->files($content->{path}, $fh)) {
+                    printf "download %s\n", decode('locale_fs', $local_path);
+                    $fh->close;
+                    unless (utime($remote_epoch, $remote_epoch, $local_path_tmp)) {
+                        warn "set modification time failure " .  decode('locale_fs', $local_path);
+                        $exit_code = 1;
+                    }
+                    unless (rename($local_path_tmp, $local_path)) {
+                        unlink($local_path_tmp);
+                        warn "rename failure " . decode('locale_fs', $local_path_tmp);
+                        $exit_code = 1;
+                    }
+                } else {
                     unlink($local_path_tmp);
-                    die $box->error;
-                }
-                unless (utime($remote_epoch, $remote_epoch, $local_path_tmp)) {
-                    warn "set modification time failure " .  $local_path;
-                }
-                unless (rename($local_path_tmp, $local_path)) {
-                    unlink($local_path_tmp);
-                    warn "rename failure " . $local_path_tmp;
+                    chomp( my $error = $box->error );
+                    warn "download failure " . decode('locale_fs', $local_path) . " (" . $error . ")";
+                    $exit_code = 1;
                 }
             } else {
                 printf "skip %s\n", $rel_path if $verbose;
             }
         }
+        $remote_inode_map->{ &inode($local_path) } = $content;
     });
-    
+
+    return if $exit_code;
+
     return unless $delete;
-    
+
     print "** delete **\n" if $verbose;
-    
+
     my @deletes;
     $local_base->recurse(
         preorder => 0,
@@ -562,9 +598,15 @@ sub sync_download {
         callback => sub {
             my $local_path = shift;
             next if $local_path eq $local_base;
-            my $rel_path = abs2rel($local_path, $local_base);
+            my $rel_path_enc = abs2rel($local_path, $local_base);
+            my $rel_path = decode('locale_fs', $rel_path_enc);
             if (exists $remote_map->{$rel_path}) {
                 printf "skip $rel_path\n" if $verbose;
+            } elsif (my $content = $remote_inode_map->{ &inode($local_path) }) {
+                my $remote_path = $content->{path};
+                my $rel_path_remote = abs2rel($remote_path, $remote_base);
+                printf "skip $rel_path\n" if $verbose and !$debug;
+                printf "skip $rel_path ( is $rel_path_remote )\n" if $verbose and $debug;
             } elsif (-f $local_path) {
                 printf "remove $rel_path\n";
                 push @deletes, $local_path;
@@ -574,9 +616,9 @@ sub sync_download {
             }
         }
     );
-    
+
     return if $dry;
-    
+
     for my $local_path (@deletes) {
         if (-f $local_path) {
             $local_path->remove;
@@ -588,20 +630,22 @@ sub sync_download {
 
 sub sync_upload {
     my ($remote_base, $local_base) = @_;
-    
+
     print "** upload **\n" if $verbose;
-    
+
     my $strp = new DateTime::Format::Strptime( pattern => '%a, %d %b %Y %T %z' );
-    
+
     my $remote_map = {};
-    
+    my $remote_path_map = {};
+
     &_find($remote_base, sub {
         my $content = shift;
         delete $content->{thumb_exists};
         $content->{is_dir} = $content->{is_dir} ? 1 : 0;
-        my $remote_path = encode('locale_fs', $content->{path});
+        my $remote_path = $content->{path};
         my $rel_path = abs2rel($remote_path, $remote_base);
-        $remote_map->{$rel_path} = $content;
+        $remote_map->{ $rel_path } = $content;
+        $remote_path_map->{ $content->{path} } = $content;
         printf "find: %s\n", $rel_path if $debug;
     });
     my @makedirs;
@@ -611,58 +655,60 @@ sub sync_upload {
         callback => sub {
             my $local_path = shift;
             next if $local_path eq $local_base;
-            my $rel_path = abs2rel($local_path, $local_base);
+            my $rel_path = decode('locale_fs', abs2rel($local_path, $local_base));
             my $remote_path = file($remote_base, $rel_path);
-            my $rel_path_uri = $rel_path;
-            my $content = delete $remote_map->{$rel_path_uri};
-            if ($content) {
+            my $content = delete $remote_map->{$rel_path} || $box->metadata($remote_path); # Dropbox are case insensitive!
+            if ($content && !$content->{is_deleted}) {
+                delete $remote_path_map->{ $content->{path} };
                 return unless -f $local_path;
                 my $remote_epoch = $strp->parse_datetime($content->{modified})->epoch;
                 my $local_epoch = -f $local_path ? $local_path->stat->mtime : '-';
                 my $remote_size = $content->{bytes};
                 my $local_size = -f $local_path ? $local_path->stat->size : '-';
                 printf "remote: %10s %10s %s\n",
-                    $remote_epoch, $remote_size, $remote_path if $debug;
+                    $remote_epoch, $remote_size, $content->{path} if $debug;
                 printf "local:  %10s %10s %s\n",
                     $local_epoch, $local_size, $local_path if $debug;
                 if (($remote_size != $local_size) or
                     ($remote_epoch < $local_epoch)) {
                     printf "upload $rel_path $remote_path\n";
-                    &put($local_path,
-                        decode('locale_fs', $remote_path->dir . '/' . $local_path->basename),
+                    &put($local_path, $remote_path,
                         { overwrite => 1 }) or die $box->error unless $dry;
                     push @makedirs, $rel_path;
                 } else {
                     printf "skip $rel_path\n" if $verbose;
                 }
             } elsif (-f $local_path) {
-                printf "upload $rel_path $remote_path\n";
-                &put($local_path,
-                    decode('locale_fs', $remote_path->dir . '/' . $local_path->basename),
-                    { overwrite => 1 }) or die $box->error unless $dry;
-                push @makedirs, $rel_path;
+                &put($local_path, $remote_path,
+                    { overwrite => 1 }) unless $dry;
+                if (!$dry and $box->error) {
+                    warn "upload failure $rel_path $remote_path (" . $box->error . ")";
+                } else {
+                    printf "upload $rel_path $remote_path\n";
+                    push @makedirs, $rel_path;
+                }
             } elsif (-d $local_path) {
                 return if grep { $_=~/^\Q$rel_path/ } @makedirs;
                 printf "mktree $rel_path $remote_path\n";
-                $box->create_folder(decode('locale_fs', $remote_path)) or die $box->error unless $dry;
+                $box->create_folder($remote_path) or die $box->error unless $dry;
                 push @makedirs, $rel_path;
             } else {
                 printf "unknown $rel_path\n";
             }
         }
     );
-    
+
     return unless $delete;
-    
+
     print "** delete **\n" if $verbose;
-    
+
     my @deletes;
-    for my $rel_path ( keys %$remote_map ) {
-        next if grep { $rel_path=~/^\Q$_/ } @deletes;
+    for my $content_path ( keys %$remote_path_map ) {
+        next if grep { $content_path=~/^\Q$_/ } @deletes;
+        $box->delete($content_path) or die $box->error unless $dry;
+        push @deletes, $content_path;
+        my $rel_path = abs2rel($content_path, $remote_base);
         print "delete $rel_path\n";
-        my $remote_path = catfile($remote_base, $rel_path);
-        $box->delete($remote_path) or die $box->error unless $dry;
-        push @deletes, $rel_path;
     }
 }
 
@@ -725,6 +771,13 @@ sub put {
         });
     };
     $upload->();
+}
+
+sub inode {
+    my $path = shift;
+    my ($dev, $inode) = stat($path);
+    return $dev . ':' . $inode if $inode;
+    return $path;
 }
 
 exit(0);
