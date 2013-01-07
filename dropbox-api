@@ -15,7 +15,7 @@ use JSON;
 use Path::Class;
 use WebService::Dropbox;
 
-our $VERSION = '1.08';
+our $VERSION = '1.09';
 
 my $limit = 10 * 1024 * 1024; # files_put_chunked method has large file support.
 
@@ -392,7 +392,7 @@ sub uid {
 }
 
 sub list {
-    my $remote_base = shift;
+    my $remote_base = decode('locale_fs', shift);
     my $list = $box->metadata($remote_base) or die $box->error;
     for my $content (@{$list->{contents}}) {
         print &_line($content);
@@ -432,7 +432,7 @@ sub _line {
 }
 
 sub find {
-    my $remote_base = shift;
+    my $remote_base = decode('locale_fs', shift);
     $printf ||= "%p\n";
     &_find($remote_base, sub { print &_line(shift); });
 }

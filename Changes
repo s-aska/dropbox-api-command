@@ -1,5 +1,8 @@
 Revision history for dropbox-api
 
+1.09    Jan  8, 2013
+        - fix "list" and "find" utf8 path bug.
+
 1.08    Jan  8, 2013
         - added print option. ( %R ... rev, %c %Ck ... client_mtime )
         - fix print option bug.
