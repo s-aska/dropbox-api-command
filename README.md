@@ -133,8 +133,12 @@ disp help.
             %e ... thumb_exists
             %M ... mime_type
             %t ... modified time
-            %r ... revision
-            %Tk ... DateTime ‘strftime’ function
+            %c ... client_mtime
+            %r ... revision (A deprecated field that semi-uniquely identifies a file. Use rev instead)
+            %R ... rev
+            %Tk ... DateTime ‘strftime’ function (modified time)
+            %Ck ... DateTime ‘strftime’ function (client_mtime)
+                    <http://search.cpan.org/dist/DateTime/lib/DateTime.pm#strftime_Patterns>
 
 ## ls
 
@@ -175,9 +179,11 @@ print format.
         %e ... thumb_exists
         %M ... mime_type
         %t ... modified time
-        %r ... revision
-
-        %Tk ... DateTime ‘strftime’ function
+        %c ... client_mtime
+        %r ... revision (A deprecated field that semi-uniquely identifies a file. Use rev instead)
+        %R ... rev
+        %Tk ... DateTime ‘strftime’ function (modified time)
+        %Ck ... DateTime ‘strftime’ function (client_mtime)
                 <http://search.cpan.org/dist/DateTime/lib/DateTime.pm#strftime_Patterns>
 
 ## find

@@ -15,7 +15,7 @@ use JSON;
 use Path::Class;
 use WebService::Dropbox;
 
-our $VERSION = '1.06';
+our $VERSION = '1.07';
 
 my $limit = 10 * 1024 * 1024; # files_put_chunked method has large file support.
 
@@ -24,8 +24,8 @@ if ($^O eq 'darwin') {
     $Encode::Locale::ENCODING_LOCALE_FS = 'utf-8-mac';
 }
 
-binmode STDIN,  ":utf8";
 binmode STDOUT, ":utf8";
+binmode STDERR, ":utf8";
 
 my $config_file = file( $ENV{'DROPBOX_CONF'} || ($ENV{'HOME'} || $ENV{'HOMEPATH'}, '.dropbox-api-config') );
 
@@ -86,7 +86,9 @@ my $format = {
     s => '_size',
     M => 'mime_type',
     t => 'modified',
-    r => 'revision'
+    c => 'client_mtime', # For files, this is the modification time set by the desktop client when the file was added to Dropbox.
+    r => 'revision', # A deprecated field that semi-uniquely identifies a file. Use rev instead.
+    R => 'rev', # A unique identifier for the current revision of a file. This field is the same rev as elsewhere in the API and can be used to detect changes and avoid conflicts.
 };
 
 # ProgressBar
@@ -158,8 +160,11 @@ sub help {
                 %e ... thumb_exists
                 %M ... mime_type
                 %t ... modified time
-                %r ... revision
-                %Tk ... DateTime ‘strftime’ function
+                %c ... client_mtime
+                %r ... revision (A deprecated field that semi-uniquely identifies a file. Use rev instead)
+                %R ... rev
+                %Tk ... DateTime ‘strftime’ function (modified time)
+                %Ck ... DateTime ‘strftime’ function (client_mtime)
         };
     } elsif ($command eq 'find') {
         $help = q{
@@ -185,8 +190,11 @@ sub help {
                 %e ... thumb_exists
                 %M ... mime_type
                 %t ... modified time
-                %r ... revision
-                %Tk ... DateTime ‘strftime’ function
+                %c ... client_mtime
+                %r ... revision (A deprecated field that semi-uniquely identifies a file. Use rev instead)
+                %R ... rev
+                %Tk ... DateTime ‘strftime’ function (modified time)
+                %Ck ... DateTime ‘strftime’ function (client_mtime)
         };
     } elsif ($command eq 'copy' or $command eq 'cp') {
         $help = q{
@@ -395,22 +403,31 @@ sub _line {
     my ($content) = @_;
     $strp ||= new DateTime::Format::Strptime( pattern => '%a, %d %b %Y %T %z' );
     my $dt;
+    my $ct;
     if ($printf) {
-        my $line = $printf;
+        my $line = eval qq{"$printf"};
         $content->{_is_dir} = $content->{is_dir} ? 'd' : '-';
         $content->{_size} = $content->{is_dir} ? '-' : $content->{size};
         $line=~s/\%T([^\%])/
             $dt ||= $strp->parse_datetime($content->{modified});
             $dt->strftime('%'.$1);
         /egx;
+        if ($content->{client_mtime}) {
+            $line=~s/\%C([^\%])/
+                $ct ||= $strp->parse_datetime($content->{client_mtime});
+                $ct->strftime('%'.$1);
+            /egx;
+        } else {
+            $line=~s/\%C([^\%])/-/g;
+        }
         $line=~s|\%([^\%])|$content->{$format->{$1}}|eg;
-        return encode('locale_fs', eval qq{"$line"});
+        return $line;
     } else {
-        return encode('locale_fs', sprintf "%s %8s %s %s\n",
+        return sprintf "%s %8s %s %s\n",
             ($content->{is_dir} ? 'd' : '-'),
             ($content->{is_dir} ? '-' : $content->{$size}),
             $content->{modified},
-            $content->{path});
+            $content->{path};
     }
 }
 
