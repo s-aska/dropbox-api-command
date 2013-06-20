@@ -18,7 +18,7 @@ WriteMakefile(
         'ExtUtils::Install' => 1.43,
         'JSON' => 0,
         'Path::Class' => 0.26,
-        'WebService::Dropbox' => 1.15,
+        'WebService::Dropbox' => 1.17,
         'DateTime::Format::Strptime' => 0,
         'Encode::Locale' => 0,
         ($^O eq 'darwin' ? ('Encode::UTF8Mac' => 0) : ()),

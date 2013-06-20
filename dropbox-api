@@ -15,7 +15,7 @@ use JSON;
 use Path::Class;
 use WebService::Dropbox;
 
-our $VERSION = '1.09';
+our $VERSION = '1.10';
 
 my $limit = 10 * 1024 * 1024; # files_put_chunked method has large file support.
 
@@ -24,10 +24,10 @@ if ($^O eq 'darwin') {
     $Encode::Locale::ENCODING_LOCALE_FS = 'utf-8-mac';
 }
 
-binmode STDOUT, ":utf8";
-binmode STDERR, ":utf8";
+binmode STDOUT, ':utf8';
+binmode STDERR, ':utf8';
 
-my $config_file = file( $ENV{'DROPBOX_CONF'} || ($ENV{'HOME'} || $ENV{'HOMEPATH'}, '.dropbox-api-config') );
+my $config_file = file( $ENV{DROPBOX_CONF} || ($ENV{HOME} || $ENV{HOMEPATH}, '.dropbox-api-config') );
 
 my $command = shift;
 my @args;
@@ -70,6 +70,10 @@ if ( my $access_level = delete $config->{access_level} ) {
         $context = 'sandbox';
     }
 }
+
+$ENV{HTTP_PROXY} = $ENV{http_proxy} if !$ENV{HTTP_PROXY} && $ENV{http_proxy};
+$ENV{NO_PROXY} = $ENV{no_proxy} if !$ENV{NO_PROXY} && $ENV{no_proxy};
+
 my $box = WebService::Dropbox->new($config);
 $box->root($context);
 $box->env_proxy if $env_proxy;
