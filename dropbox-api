@@ -15,7 +15,7 @@ use JSON;
 use Path::Class;
 use WebService::Dropbox;
 
-our $VERSION = '1.10';
+our $VERSION = '1.11';
 
 my $limit = 10 * 1024 * 1024; # files_put_chunked method has large file support.
 
@@ -524,6 +524,10 @@ sub sync {
     $remote_base = decode('locale_fs', $remote_base);
 
     $remote_base=~s|^dropbox:/|/|;
+
+    my $content = $box->metadata($remote_base) or die $box->error;
+
+    $remote_base = $content->{path}; # Dropbox are case insensitive!
 
     print "!! enable dry run !!\n" if $dry;
     print "remote_base: $remote_base\n" if $verbose;
