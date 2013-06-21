@@ -15,7 +15,7 @@ use JSON;
 use Path::Class;
 use WebService::Dropbox;
 
-our $VERSION = '1.11';
+our $VERSION = '1.12';
 
 my $limit = 10 * 1024 * 1024; # files_put_chunked method has large file support.
 
@@ -549,7 +549,7 @@ sub sync_download {
     &_find($remote_base, sub {
         my $content = shift;
         my $remote_path = $content->{path};
-        my $rel_path = abs2rel($remote_path, $remote_base);
+        my $rel_path = remote_abs2rel($remote_path, $remote_base);
         my $rel_path_enc = encode('locale_fs', $rel_path);
         $remote_map->{$rel_path}++;
         printf "check: %s\n", $rel_path if $debug;
@@ -629,7 +629,7 @@ sub sync_download {
                 printf "skip $rel_path\n" if $verbose;
             } elsif (my $content = $remote_inode_map->{ &inode($local_path) }) {
                 my $remote_path = $content->{path};
-                my $rel_path_remote = abs2rel($remote_path, $remote_base);
+                my $rel_path_remote = remote_abs2rel($remote_path, $remote_base);
                 printf "skip $rel_path\n" if $verbose and !$debug;
                 printf "skip $rel_path ( is $rel_path_remote )\n" if $verbose and $debug;
             } elsif (-f $local_path) {
@@ -668,7 +668,7 @@ sub sync_upload {
         delete $content->{thumb_exists};
         $content->{is_dir} = $content->{is_dir} ? 1 : 0;
         my $remote_path = $content->{path};
-        my $rel_path = abs2rel($remote_path, $remote_base);
+        my $rel_path = remote_abs2rel($remote_path, $remote_base);
         $remote_map->{ $rel_path } = $content;
         $remote_path_map->{ $content->{path} } = $content;
         printf "find: %s\n", $rel_path if $debug;
@@ -732,7 +732,7 @@ sub sync_upload {
         next if grep { $content_path=~/^\Q$_/ } @deletes;
         $box->delete($content_path) or die $box->error unless $dry;
         push @deletes, $content_path;
-        my $rel_path = abs2rel($content_path, $remote_base);
+        my $rel_path = remote_abs2rel($content_path, $remote_base);
         print "delete $rel_path\n";
     }
 }
@@ -798,11 +798,17 @@ sub put {
     $upload->();
 }
 
-sub inode {
+sub inode ($) {
     my $path = shift;
     my ($dev, $inode) = stat($path);
     return $dev . ':' . $inode if $inode;
     return $path;
+}
+
+sub remote_abs2rel ($$) {
+    my ($remote_path, $remote_base) = @_;
+    $remote_path =~ s|^$remote_base/?||i;
+    return $remote_path;
 }
 
 exit(0);
