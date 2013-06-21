@@ -1,7 +1,10 @@
 Revision history for dropbox-api
 
-1.11    Jun 20, 2013
+1.12    Jun 21, 2013
         - Dropbox are case insensitive. (zenoamaro)
+
+1.11    Jun 20, 2013
+        - Dropbox are case insensitive.
 
 1.10    Jun 20, 2013
         - Use lowercase for HTTP_PROXY envvar (mathstuf)
