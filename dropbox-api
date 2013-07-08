@@ -99,7 +99,7 @@ my $format = {
 my $cols = 50;
 if ($verbose) {
     eval {
-        my $stty = `stty -a`;
+        my $stty = `stty -a 2>/dev/null`;
         if ($stty =~ m|columns (\d+)| || $stty =~ m|(\d+) columns|) {
             $cols = $1;
         }
