@@ -1,5 +1,5 @@
 package App::dropboxapi;
-our $VERSION = '1.12';
+our $VERSION = '1.13';
 
 =head1 NAME
 

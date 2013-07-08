@@ -1,5 +1,9 @@
 Revision history for dropbox-api
 
+1.13    Jul  8, 2013
+        - Remove interpolation in printf format arguments. (thefloweringash)
+        - Ignore stty errors when stdin isn't a terminal. (thefloweringash)
+
 1.12    Jun 21, 2013
         - Dropbox are case insensitive. (zenoamaro)
 
