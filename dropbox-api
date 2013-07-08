@@ -626,17 +626,17 @@ sub sync_download {
             my $rel_path_enc = abs2rel($local_path, $local_base);
             my $rel_path = decode('locale_fs', $rel_path_enc);
             if (exists $remote_map->{$rel_path}) {
-                printf "skip $rel_path\n" if $verbose;
+                printf "skip %s\n", $rel_path if $verbose;
             } elsif (my $content = $remote_inode_map->{ &inode($local_path) }) {
                 my $remote_path = $content->{path};
                 my $rel_path_remote = remote_abs2rel($remote_path, $remote_base);
-                printf "skip $rel_path\n" if $verbose and !$debug;
-                printf "skip $rel_path ( is $rel_path_remote )\n" if $verbose and $debug;
+                printf "skip %s\n", $rel_path if $verbose and !$debug;
+                printf "skip %s ( is %s )\n", $rel_path, $rel_path_remote if $verbose and $debug;
             } elsif (-f $local_path) {
-                printf "remove $rel_path\n";
+                printf "remove %s\n", $rel_path;
                 push @deletes, $local_path;
             } elsif (-d $local_path) {
-                printf "rmtree $rel_path\n";
+                printf "rmtree %s\n", $rel_path;
                 push @deletes, $local_path;
             }
         }
@@ -696,12 +696,12 @@ sub sync_upload {
                     $local_epoch, $local_size, $local_path if $debug;
                 if (($remote_size != $local_size) or
                     ($remote_epoch < $local_epoch)) {
-                    printf "upload $rel_path $remote_path\n";
+                    printf "upload %s %s\n", $rel_path, $remote_path;
                     &put($local_path, $remote_path,
                         { overwrite => 1 }) or die $box->error unless $dry;
                     push @makedirs, $rel_path;
                 } else {
-                    printf "skip $rel_path\n" if $verbose;
+                    printf "skip %s\n", $rel_path if $verbose;
                 }
             } elsif (-f $local_path) {
                 &put($local_path, $remote_path,
@@ -709,16 +709,16 @@ sub sync_upload {
                 if (!$dry and $box->error) {
                     warn "upload failure $rel_path $remote_path (" . $box->error . ")";
                 } else {
-                    printf "upload $rel_path $remote_path\n";
+                    printf "upload %s %s\n", $rel_path, $remote_path;
                     push @makedirs, $rel_path;
                 }
             } elsif (-d $local_path) {
                 return if grep { $_=~/^\Q$rel_path/ } @makedirs;
-                printf "mktree $rel_path $remote_path\n";
+                printf "mktree %s %s\n", $rel_path, $remote_path;
                 $box->create_folder($remote_path) or die $box->error unless $dry;
                 push @makedirs, $rel_path;
             } else {
-                printf "unknown $rel_path\n";
+                printf "unknown %s\n", $rel_path;
             }
         }
     );
