@@ -1,0 +1,75 @@
+{
+   "abstract" : "command line interface to access Dropbox API",
+   "author" : [
+      "- Shinichiro Aska"
+   ],
+   "dynamic_config" : 0,
+   "generated_by" : "Minilla/v0.7.2, CPAN::Meta::Converter version 2.132661",
+   "license" : [
+      "mit"
+   ],
+   "meta-spec" : {
+      "url" : "http://search.cpan.org/perldoc?CPAN::Meta::Spec",
+      "version" : "2"
+   },
+   "name" : "App-dropboxapi",
+   "no_index" : {
+      "directory" : [
+         "t",
+         "xt",
+         "inc",
+         "share",
+         "eg",
+         "examples",
+         "author"
+      ]
+   },
+   "prereqs" : {
+      "configure" : {
+         "requires" : {
+            "CPAN::Meta" : "0",
+            "CPAN::Meta::Prereqs" : "0",
+            "Module::Build" : "0.38"
+         }
+      },
+      "develop" : {
+         "requires" : {
+            "Test::CPAN::Meta" : "0",
+            "Test::MinimumVersion" : "0.10108",
+            "Test::Pod" : "1.41",
+            "Test::Spellunker" : "v0.2.7"
+         }
+      },
+      "runtime" : {
+         "requires" : {
+            "DateTime::Format::Strptime" : "0",
+            "Encode::Locale" : "0",
+            "Encode::UTF8Mac" : "0",
+            "JSON" : "0",
+            "Path::Class" : "0.26",
+            "WebService::Dropbox" : "1.17",
+            "perl" : "5.008001"
+         }
+      }
+   },
+   "release_status" : "unstable",
+   "resources" : {
+      "bugtracker" : {
+         "web" : "https://github.com/s-aska/dropbox-api-command/issues"
+      },
+      "homepage" : "https://github.com/s-aska/dropbox-api-command",
+      "repository" : {
+         "type" : "git",
+         "url" : "git://github.com/s-aska/dropbox-api-command.git",
+         "web" : "https://github.com/s-aska/dropbox-api-command"
+      }
+   },
+   "version" : "1.14",
+   "x_authority" : "cpan:ASKADNA",
+   "x_contributors" : [
+      "Sylvain Filteau <cidsphere@gmail.com>",
+      "aska <aska@www5009u.sakura.ne.jp>",
+      "Andrew Childs <lorne@cons.org.nz>",
+      "s-aska <s.aska.org@gmail.com>"
+   ]
+}

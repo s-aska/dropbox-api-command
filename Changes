@@ -1,5 +1,8 @@
 Revision history for dropbox-api
 
+1.14    Oct  2, 2013
+        - added LICENSE, README.md, cpanfile
+
 1.13    Jul  8, 2013
         - Remove interpolation in printf format arguments. (thefloweringash)
         - Ignore stty errors when stdin isn't a terminal. (thefloweringash)

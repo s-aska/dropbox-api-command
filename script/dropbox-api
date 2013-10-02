@@ -1,6 +1,7 @@
 #!/usr/bin/env perl
 
 use strict;
+use warnings;
 use Cwd 'abs_path';
 use Data::Dumper;
 use DateTime;
@@ -15,7 +16,7 @@ use JSON;
 use Path::Class;
 use WebService::Dropbox;
 
-our $VERSION = '1.13';
+our $VERSION = '1.14';
 
 my $limit = 10 * 1024 * 1024; # files_put_chunked method has large file support.
 

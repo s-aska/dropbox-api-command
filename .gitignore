@@ -7,3 +7,11 @@ MYMETA.yml
 pm_to_blib
 *.tar.gz
 tool
+/dropbox-api-command-*
+/.build
+/_build_params
+/Build
+!Build/
+!META.json
+!LICENSE
+/App-dropboxapi-*
