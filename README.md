@@ -1,29 +1,89 @@
 [![Build Status](https://travis-ci.org/s-aska/dropbox-api-command.png?branch=master)](https://travis-ci.org/s-aska/dropbox-api-command)
-# NAME
+# Dropbox API Command
 
-App::dropboxapi - command line interface to access Dropbox API
+Dropbox API Wrapper Command
 
-# SYNOPSIS
+- [github](https://github.com/s-aska/dropbox-api-command)
+- [official](http://doc.7kai.org/Product/DropboxAPICommand/README)
 
-    dropbox-api put /tmp/foo.txt dropbox:/Public/
+## Commands
+- ls
+- **find**
+- **sync**
+- cp
+- mv
+- rm
+- mkdir
+- get
+- put
+- uid
 
-Run `dropbox-api help` for more options.
+## Install and Setup
 
-# DESCRIPTION
+### 1. Install
 
-dropbox-api is a command line interface to access Dropbox API.
+#### 1-a) FreeBSD
 
-has many sub-commands ... ls, find, sync, cp, mv, rm, mkdir, get, put, uid
+    pkg_add -r dropbox-api-command
 
-# Sub Commands
+#### 1-b) Ubuntu
+
+    sudo apt-get install make gcc libssl-dev wget
+    wget https://raw.github.com/miyagawa/cpanminus/master/cpanm
+    sudo perl cpanm App::dropboxapi
+
+#### 1-c) CentOS
+
+    # CentOS 5
+    sudo yum install gcc gcc-c++ openssl-devel wget
+    # CentOS 6
+    sudo yum install gcc gcc-c++ openssl-devel wget perl-devel
+    wget https://raw.github.com/miyagawa/cpanminus/master/cpanm
+    sudo perl cpanm App::dropboxapi
+
+#### 1-d) OS X
+
+    # Install Command Line Tools for Xcode
+    open https://www.google.com/search?q=Command+Line+Tools+for+Xcode
+
+    curl -O https://raw.github.com/miyagawa/cpanminus/master/cpanm
+    sudo perl cpanm App::dropboxapi
+
+### 2. Get API Key and API Secret
+
+    https://www.dropbox.com/developers
+    My Apps => Create an App
+
+### 3. Get Access Token and Access Secret
+
+    > dropbox-api setup
+    Please Input API Key: ***************
+    Please Input API Secret: ***************
+    Please Input Access type
+      a ... App folder - Your app only needs access to a single folder within the user's Dropbox
+      f ... Full Dropbox - Your app needs access to the user's entire Dropbox
+    [a or f]: *
+    URL: http://api.dropbox.com/0/oauth/authorize?oauth_token=***************&oauth_callback=
+    Please Access URL and press Enter
+    OK?
+    success! try
+    > dropbox-api ls
+    > dropbox-api find /
+
+### 4. How to use Proxy
+
+Please use -e option.
+
+    > HTTP_PROXY="http://127.0.0.1:8888" dropbox-api setup -e
 
 ## help
 
 disp help.
 
+- alias
+  - \-
 - syntax
-
-    dropbox-api help \[<command>\]
+  - dropbox-api help [&lt;command&gt;]
 
 ### Example
 
@@ -42,6 +102,10 @@ disp help.
         get   download file
         sync  sync directory (local => dropbox or dropbox => local)
         uid   get accound uid
+
+    Common Options
+        -e enable env_proxy ( HTTP_PROXY, NO_PROXY )
+        -D enable debug
 
     See 'dropbox-api help <command>' for more information on a specific command.
 
@@ -70,20 +134,21 @@ disp help.
             %e ... thumb_exists
             %M ... mime_type
             %t ... modified time
-            %r ... revision
-            %Tk ... DateTime 'strftime' function
+            %c ... client_mtime
+            %r ... revision (A deprecated field that semi-uniquely identifies a file. Use rev instead)
+            %R ... rev
+            %Tk ... DateTime ‘strftime’ function (modified time)
+            %Ck ... DateTime ‘strftime’ function (client_mtime)
+                    <http://search.cpan.org/dist/DateTime/lib/DateTime.pm#strftime_Patterns>
 
 ## ls
 
 file list view.
 
 - alias
-
-    list
-
+  - list
 - syntax
-
-    dropbox-api ls <dropbox\_path>
+  - dropbox-api ls &lt;dropbox\_path&gt;
 
 ### Example
 
@@ -115,18 +180,21 @@ print format.
         %e ... thumb_exists
         %M ... mime_type
         %t ... modified time
-        %r ... revision
-
-        %Tk ... DateTime 'strftime' function
+        %c ... client_mtime
+        %r ... revision (A deprecated field that semi-uniquely identifies a file. Use rev instead)
+        %R ... rev
+        %Tk ... DateTime ‘strftime’ function (modified time)
+        %Ck ... DateTime ‘strftime’ function (client_mtime)
                 <http://search.cpan.org/dist/DateTime/lib/DateTime.pm#strftime_Patterns>
 
 ## find
 
 recursive file list view.
 
+- alias
+  - \-
 - syntax
-
-    dropbox-api find <dropbox\_path> \[options\]
+  - dropbox-api find &lt;dropbox\_path&gt; [options]
 
 ### Example
 
@@ -151,11 +219,9 @@ see also list command's printf option.
 
 ## sync ( rsync )
 
-recursive file synchronization.
-
 ### sync from dropbox
 
-dropbox-api sync dropbox:<source\_dir> <target\_dir> \[options\]
+dropbox-api sync dropbox:&lt;source\_dir&gt; &lt;target\_dir&gt; [options]
 
     > dropbox-api sync dropbox:/product/google-tasks-checker-plus/src /tmp/product
     download /private/tmp/product/external.png
@@ -164,7 +230,7 @@ dropbox-api sync dropbox:<source\_dir> <target\_dir> \[options\]
 
 ### sync to dropbox
 
-dropbox-api sync <source\_dir> dropbox:<target\_dir> \[options\]
+dropbox-api sync &lt;source\_dir&gt; dropbox:&lt;target\_dir&gt; [options]
 
     > dropbox-api sync /tmp/product dropbox:/work/src
     upload background.html /work/src/background.html
@@ -221,12 +287,9 @@ dropbox-api sync <source\_dir> dropbox:<target\_dir> \[options\]
 copy file or directory.
 
 - alias
-
-    copy
-
+  - copy
 - syntax
-
-    dropbox-api cp <source\_file> <target\_file>
+  - dropbox-api cp &lt;source\_file&gt; &lt;target\_file&gt;
 
 ### Example
 
@@ -237,12 +300,9 @@ copy file or directory.
 move file or directory.
 
 - alias
-
-    move
-
+  - move
 - syntax
-
-    dropbox-api mv <source\_file> <target\_file>
+  - dropbox-api mv &lt;source\_file&gt; &lt;target\_file&gt;
 
 ### Example
 
@@ -252,15 +312,12 @@ move file or directory.
 
 make directory.
 
-\*no error if existing, make parent directories as needed.\*
+*no error if existing, make parent directories as needed.*
 
 - alias
-
-    mkpath
-
+  - mkpath
 - syntax
-
-    dropbox-api mkdir <directory>
+  - dropbox-api mkdir &lt;directory&gt;
 
 ### Example
 
@@ -270,15 +327,12 @@ make directory.
 
 remove file or directory.
 
-\*remove the contents of directories recursively.\*
+*remove the contents of directories recursively.*
 
 - alias
-
-    rmtree
-
+  - rmtree
 - syntax
-
-    dropbox-api rm <file\_or\_directory>
+  - dropbox-api rm &lt;file_or_directory&gt;
 
 ### Example
 
@@ -289,12 +343,9 @@ remove file or directory.
 download file from dropbox.
 
 - alias
-
-    dl, download
-
+  - dl, download
 - syntax
-
-    dropbox-api get dropbox:<dropbox\_file> <file>
+  - dropbox-api get dropbox:&lt;dropbox_file&gt; <file>
 
 ### Example
 
@@ -305,23 +356,13 @@ download file from dropbox.
 upload file to dropbox.
 
 - alias
-
-    up, upload
-
+  - up, upload
 - syntax
-
-    dropbox-api put <file> dropbox:<dropbox\_dir>
+  - dropbox-api put &lt;file&gt; dropbox:&lt;dropbox_dir&gt;
 
 ### Example
 
     dropbox-api put /tmp/foo.txt dropbox:/Public/
-
-### verbose option ( -v )
-
-A progress bar is displayed.
-
-    dropbox-api put /tmp/1GB.dat dropbox:/Public/
-    100% [=====================================================================================>]
 
 ## uid
 
@@ -330,6 +371,23 @@ Get your accound UID
 ### Example
 
     dropbox-api uid
+
+## Tips
+
+### Retry
+
+    #!/bin/bash
+
+    command='dropbox-api sync dropbox:/test/ /Users/aska/test/ -vde'
+
+    NEXT_WAIT_TIME=0
+    EXIT_CODE=0
+    until $command || [ $NEXT_WAIT_TIME -eq 4 ]; do
+        EXIT_CODE=$?
+        sleep $NEXT_WAIT_TIME
+        let NEXT_WAIT_TIME=NEXT_WAIT_TIME+1
+    done
+    exit $EXIT_CODE
 
 # COPYRIGHT
 
