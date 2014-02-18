@@ -1,5 +1,8 @@
 Revision history for dropbox-api
 
+1.15    Feb 18, 2013
+        - catch open error
+
 1.14    Oct  2, 2013
         - added LICENSE, README.md, cpanfile
 

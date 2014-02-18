@@ -585,10 +585,15 @@ sub sync_download {
                 printf "mkpath %s\n", decode('locale_fs', $local_path->dir) unless -d $local_path->dir;
                 $local_path->dir->mkpath unless -d $local_path->dir;
                 my $local_path_tmp = $local_path . '.dropbox-api.tmp';
-                my $fh = file($local_path_tmp)->openw;
+                my $fh;
+                unless (open($fh, '>', $local_path_tmp)) {
+                    warn "open failure " . decode('locale_fs', $local_path) . " (" . $! . ")";
+                    $exit_code = 1;
+                    return;
+                }
                 if ($box->files($content->{path}, $fh)) {
                     printf "download %s\n", decode('locale_fs', $local_path);
-                    $fh->close;
+                    close($fh);
                     unless (utime($remote_epoch, $remote_epoch, $local_path_tmp)) {
                         warn "set modification time failure " .  decode('locale_fs', $local_path);
                         $exit_code = 1;
