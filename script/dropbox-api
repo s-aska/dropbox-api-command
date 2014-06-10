@@ -628,7 +628,7 @@ sub sync_download {
         depthfirst => 1,
         callback => sub {
             my $local_path = shift;
-            next if $local_path eq $local_base;
+            return if $local_path eq $local_base;
             my $rel_path_enc = abs2rel($local_path, $local_base);
             my $rel_path = decode('locale_fs', $rel_path_enc);
             if (exists $remote_map->{$rel_path}) {
