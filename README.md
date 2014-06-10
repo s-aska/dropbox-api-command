@@ -219,6 +219,8 @@ see also list command's printf option.
 
 ## sync ( rsync )
 
+recursive file synchronization.
+
 ### sync from dropbox
 
 dropbox-api sync dropbox:&lt;source\_dir&gt; &lt;target\_dir&gt; [options]
@@ -363,6 +365,14 @@ upload file to dropbox.
 ### Example
 
     dropbox-api put /tmp/foo.txt dropbox:/Public/
+
+
+### verbose option ( -v )
+
+A progress bar is displayed.
+
+    dropbox-api put /tmp/1GB.dat dropbox:/Public/
+    100% [=====================================================================================>]
 
 ## uid
 
