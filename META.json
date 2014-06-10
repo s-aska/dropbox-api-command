@@ -64,11 +64,10 @@
          "web" : "https://github.com/s-aska/dropbox-api-command"
       }
    },
-   "version" : "1.14",
+   "version" : "1.16",
    "x_authority" : "cpan:ASKADNA",
    "x_contributors" : [
       "Sylvain Filteau <cidsphere@gmail.com>",
-      "aska <aska@www5009u.sakura.ne.jp>",
       "Andrew Childs <lorne@cons.org.nz>",
       "Shinichiro Aska <s.aska.org@gmail.com>"
    ]
