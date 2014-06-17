@@ -1,5 +1,8 @@
 Revision history for dropbox-api
 
+1.17    Jun 18, 2014
+        - fix bug `next` => `return`
+
 1.16    Jun 10, 2014
         - fix bug `next` => `return`
 

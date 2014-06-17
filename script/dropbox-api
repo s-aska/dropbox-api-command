@@ -16,7 +16,7 @@ use JSON;
 use Path::Class;
 use WebService::Dropbox;
 
-our $VERSION = '1.14';
+our $VERSION = '1.17';
 
 my $limit = 10 * 1024 * 1024; # files_put_chunked method has large file support.
 
@@ -685,7 +685,7 @@ sub sync_upload {
         depthfirst => 1,
         callback => sub {
             my $local_path = shift;
-            next if $local_path eq $local_base;
+            return if $local_path eq $local_base;
             my $rel_path = decode('locale_fs', abs2rel($local_path, $local_base));
             my $remote_path = file($remote_base, $rel_path);
             my $content = delete $remote_map->{$rel_path} || $box->metadata($remote_path); # Dropbox are case insensitive!
