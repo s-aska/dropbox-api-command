@@ -14,7 +14,8 @@ use File::Temp;
 use Getopt::Std;
 use JSON;
 use Path::Class;
-use WebService::Dropbox;
+use POSIX qw();
+use WebService::Dropbox 2.04;
 
 our $VERSION = '1.17';
 
@@ -65,34 +66,45 @@ my $config = decode_json($config_file->slurp);
 $config->{key} or die 'please set config key.';
 $config->{secret} or die 'please set config secret.';
 $config->{access_token} or die 'please set config access_token.';
-$config->{access_secret} or die 'please set config access_secret.';
-if ( my $access_level = delete $config->{access_level} ) {
-    if ($access_level eq 'a') {
-        $context = 'sandbox';
+# $config->{access_secret} or die 'please set config access_secret.';
+if ($config->{access_secret}) {
+    my $oauth2_access_token = &token_from_oauth1($config->{key}, $config->{secret}, $config->{access_token}, $config->{access_secret});
+    if ($oauth2_access_token) {
+        delete $config->{access_secret};
+        $config->{access_token} = $oauth2_access_token;
+        $config_file->openw->print(encode_json($config));
+        warn "Auto migration OAuth1 Token to OAuth2 token.";
+    } else {
+        die "please setup.";
     }
 }
+# if ( my $access_level = delete $config->{access_level} ) {
+#     if ($access_level eq 'a') {
+#         $context = 'sandbox';
+#     }
+# }
 
 $ENV{HTTP_PROXY} = $ENV{http_proxy} if !$ENV{HTTP_PROXY} && $ENV{http_proxy};
 $ENV{NO_PROXY} = $ENV{no_proxy} if !$ENV{NO_PROXY} && $ENV{no_proxy};
 
 my $box = WebService::Dropbox->new($config);
-$box->root($context);
+# $box->root($context);
 $box->env_proxy if $env_proxy;
 
 # printf option
 my $strp;
-my $size = $human ? 'size' : 'bytes';
+my $size = $human ? '_size' : 'size';
 my $format = {
-    i => 'icon',
-    b => 'bytes',
-    e => 'thumb_exists',
-    d => '_is_dir',
-    p => 'path',
+    i => 'icon', # Not available
+    b => 'size',
+    e => 'thumb_exists', # jpg, jpeg, png, tiff, tif, gif or bmp
+    d => '_is_dir',      # Check if .tag = "folder"
+    p => 'path_display',
     s => '_size',
-    M => 'mime_type',
-    t => 'modified',
-    c => 'client_mtime', # For files, this is the modification time set by the desktop client when the file was added to Dropbox.
-    r => 'revision', # A deprecated field that semi-uniquely identifies a file. Use rev instead.
+    # M => 'mime_type',    # Not available
+    t => 'server_modified',
+    c => 'client_modified', # For files, this is the modification time set by the desktop client when the file was added to Dropbox.
+    # r => 'revision', # A deprecated field that semi-uniquely identifies a file. Use rev instead.
     R => 'rev', # A unique identifier for the current revision of a file. This field is the same rev as elsewhere in the API and can be used to detect changes and avoid conflicts.
 };
 
@@ -164,12 +176,12 @@ sub help {
                 %i ... icon
                 %e ... thumb_exists
                 %M ... mime_type
-                %t ... modified time
-                %c ... client_mtime
+                %t ... server_modified
+                %c ... client_modified
                 %r ... revision (A deprecated field that semi-uniquely identifies a file. Use rev instead)
                 %R ... rev
-                %Tk ... DateTime ‘strftime’ function (modified time)
-                %Ck ... DateTime ‘strftime’ function (client_mtime)
+                %Tk ... DateTime ‘strftime’ function (server_modified)
+                %Ck ... DateTime ‘strftime’ function (client_modified)
         };
     } elsif ($command eq 'find') {
         $help = q{
@@ -189,17 +201,16 @@ sub help {
             -p print format.
                 %d ... is_dir ( d: dir, -: file )
                 %p ... path
-                %b ... bytes
-                %s ... size (e.g., 1K 234M 2G)
+                %b ... size
+                %s ... human readable format size (e.g., 1K 234M 2G)
                 %i ... icon
                 %e ... thumb_exists
                 %M ... mime_type
-                %t ... modified time
-                %c ... client_mtime
-                %r ... revision (A deprecated field that semi-uniquely identifies a file. Use rev instead)
+                %t ... server_modified
+                %c ... client_modified
                 %R ... rev
-                %Tk ... DateTime ‘strftime’ function (modified time)
-                %Ck ... DateTime ‘strftime’ function (client_mtime)
+                %Tk ... DateTime ‘strftime’ function (server_modified)
+                %Ck ... DateTime ‘strftime’ function (client_modified)
         };
     } elsif ($command eq 'copy' or $command eq 'cp') {
         $help = q{
@@ -356,30 +367,30 @@ sub setup {
     die 'Get API Secret from https://www.dropbox.com/developers' unless $secret;
     $config->{secret} = $secret;
 
-    print "Please Input Access type\n";
-    print "  a ... App folder - Your app only needs access to a single folder within the user's Dropbox\n";
-    print "  f ... Full Dropbox - Your app needs access to the user's entire Dropbox\n";
-    print "[a or f]: ";
-    chomp( my $access_level = <STDIN> );
-    if ($access_level=~m|^[af]$|i) {
-        $config->{access_level} = lc($access_level) eq 'a' ? 'a' : 'f';
-    } else {
-        die 'invalid access level.';
-    }
+    # print "Please Input Access type\n";
+    # print "  a ... App folder - Your app only needs access to a single folder within the user's Dropbox\n";
+    # print "  f ... Full Dropbox - Your app needs access to the user's entire Dropbox\n";
+    # print "[a or f]: ";
+    # chomp( my $access_level = <STDIN> );
+    # if ($access_level=~m|^[af]$|i) {
+    #     $config->{access_level} = lc($access_level) eq 'a' ? 'a' : 'f';
+    # } else {
+    #     die 'invalid access level.';
+    # }
 
     $config->{callback_url} = '';
     my $box = WebService::Dropbox->new($config);
     $box->env_proxy if $env_proxy;
-    my $login_link = $box->login;
+    my $login_link = $box->authorize;
     die $box->error if $box->error;
     print "URL: $login_link\n";
-    print "Please Access URL and press Enter\n";
-    print "OK?";
-    <STDIN>;
-    $box->auth;
-    die $box->error if $box->error;
+    print "Please Access URL\n";
+    print "Please Input code and press Enter: ";
+    chomp( my $code = <STDIN> );
+    unless ($box->token($code)) {
+        die $box->error;
+    }
     $config->{access_token} = $box->access_token;
-    $config->{access_secret} = $box->access_secret;
     print "success! try\n";
     print "> dropbox-api ls\n";
     print "> dropbox-api find /\n";
@@ -392,47 +403,67 @@ sub setup {
 }
 
 sub uid {
-    my $info = $box->account_info or die $box->error;
-    print $info->{uid}, "\n";
+    my $info = $box->get_current_account or die $box->error;
+    print $info->{account_id}, "\n";
 }
 
 sub list {
     my $remote_base = decode('locale_fs', shift);
-    my $list = $box->metadata($remote_base) or die $box->error;
-    for my $content (@{$list->{contents}}) {
-        print &_line($content);
+    my $list = $box->list_folder($remote_base) or die $box->error;
+    for my $entry (@{$list->{entries}}) {
+        print &_line($entry);
     }
 }
 
 sub _line {
     my ($content) = @_;
-    $strp ||= new DateTime::Format::Strptime( pattern => '%a, %d %b %Y %T %z' );
+    $strp ||= new DateTime::Format::Strptime( pattern => '%Y-%m-%dT%T' );
     my $dt;
     my $ct;
     if ($printf) {
         my $line = eval qq{"$printf"};
-        $content->{_is_dir} = $content->{is_dir} ? 'd' : '-';
-        $content->{_size} = $content->{is_dir} ? '-' : $content->{size};
-        $line=~s/\%T([^\%])/
-            $dt ||= $strp->parse_datetime($content->{modified});
-            $dt->strftime('%'.$1);
-        /egx;
-        if ($content->{client_mtime}) {
+        $content->{_is_dir} = $content->{'.tag'} eq 'folder' ? 'd' : '-';
+        if ($content->{server_modified}) {
+            $line=~s/\%T([^\%])/
+                $dt ||= $strp->parse_datetime($content->{server_modified});
+                $dt->strftime('%'.$1);
+            /egx;
+        } else {
+            $line=~s/\%TY/----/g;
+            $line=~s/\%T([^\%])/--/g;
+        }
+        if ($content->{client_modified}) {
             $line=~s/\%C([^\%])/
-                $ct ||= $strp->parse_datetime($content->{client_mtime});
+                $ct ||= $strp->parse_datetime($content->{client_modified});
                 $ct->strftime('%'.$1);
             /egx;
         } else {
-            $line=~s/\%C([^\%])/-/g;
+            $line=~s/\%CY/----/g;
+            $line=~s/\%C([^\%])/--/g;
         }
-        $line=~s|\%([^\%])|$content->{$format->{$1}}|eg;
+        my $get = sub {
+            my $key = $format->{ $_[0] };
+            if ($key eq '_size') {
+                return exists $content->{size} ? format_bytes($content->{size}) : '   -';
+            } elsif ($key eq 'thumb_exists') {
+                if ($content->{path_display} =~ qr{ \.(?:jpg|jpeg|png|tiff|tif|gif|bmp) \z }xms && $content->{size} < 20 * 1024 * 1024) {
+                    return 'true';
+                } else {
+                    return 'false';
+                }
+            } else {
+                my $val = $content->{ $key };
+                return defined $val ? $val : '';
+            }
+        };
+        $line=~s|\%([^\%])|$get->($1)|eg;
         return $line;
     } else {
         return sprintf "%s %8s %s %s\n",
-            ($content->{is_dir} ? 'd' : '-'),
-            ($content->{is_dir} ? '-' : $content->{$size}),
-            $content->{modified},
-            $content->{path};
+            ($content->{'.tag'} eq 'folder' ? 'd' : '-'),
+            ($content->{'.tag'} eq 'folder' ? '-' : $content->{$size}),
+            ($content->{'.tag'} eq 'folder' ? '-' : $content->{server_modified}),
+            $content->{path_display};
     }
 }
 
@@ -815,6 +846,55 @@ sub remote_abs2rel ($$) {
     my ($remote_path, $remote_base) = @_;
     $remote_path =~ s|^\Q$remote_base\E/?||i;
     return $remote_path;
+}
+
+use constant UNITS => [
+    [ 'P', 1024 ** 4 * 1000, 1024 ** 5 ],
+    [ 'T', 1024 ** 3 * 1000, 1024 ** 4 ],
+    [ 'G', 1024 ** 2 * 1000, 1024 ** 3 ],
+    [ 'M', 1024 * 1000, 1024 ** 2 ],
+    [ 'K', 1000, 1024 ],
+    [ 'B', 0, 1 ],
+];
+
+sub format_bytes ($) {
+    my $size = shift;
+    for my $unit (@{ UNITS() }) {
+        my ($unit_label, $unit_min, $unit_value) = @{ $unit };
+        if ($size >= $unit_min) {
+            my $size_unit = $size / $unit_value;
+            if (round($size_unit) < 10) {
+                return sprintf('%1.1f%s', nearest(.1, $size_unit), $unit_label);
+            } else {
+                return sprintf('%3s%s', round($size_unit), $unit_label);
+            }
+        }
+    }
+    return '  0B';
+}
+
+sub round ($) {
+    POSIX::floor($_[0] + 0.50000000000008);
+}
+
+sub nearest ($) {
+    round($_[1] / $_[0]) * $_[0];
+}
+
+sub token_from_oauth1 {
+    my $key = shift;
+    my $secret = shift;
+    my $access_token = shift;
+    my $access_secret = shift;
+
+    require WebService::Dropbox::TokenFromOAuth1;
+
+    WebService::Dropbox::TokenFromOAuth1->token_from_oauth1({
+        consumer_key    => $key,
+        consumer_secret => $secret,
+        access_token    => $access_token,  # OAuth1 access_token
+        access_secret   => $access_secret, # OAuth2 access_secret
+    });
 }
 
 exit(0);
