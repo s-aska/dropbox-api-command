@@ -31,7 +31,7 @@ binmode STDERR, ':utf8';
 
 my $config_file = file( $ENV{DROPBOX_CONF} || ($ENV{HOME} || $ENV{HOMEPATH}, '.dropbox-api-config') );
 
-my $command = shift;
+my $command = shift || '';
 my @args;
 for (@{[@ARGV]}) {
     last if $_=~/^-/;
@@ -49,8 +49,11 @@ my $verbose   = $opts{v};
 my $debug     = $opts{D};
 my $human     = $opts{h};
 my $printf    = $opts{p};
-my $context   = $opts{s} ? 'sandbox' : 'dropbox';
 my $env_proxy = $opts{e};
+
+if ($opts{s}) {
+    die "-s is gone.";
+}
 
 if ($command eq '-v') {
     &help('version');
@@ -66,36 +69,43 @@ my $config = decode_json($config_file->slurp);
 $config->{key} or die 'please set config key.';
 $config->{secret} or die 'please set config secret.';
 $config->{access_token} or die 'please set config access_token.';
-# $config->{access_secret} or die 'please set config access_secret.';
 if ($config->{access_secret}) {
+    warn "Auto migration OAuth1 Token to OAuth2 token...";
     my $oauth2_access_token = &token_from_oauth1($config->{key}, $config->{secret}, $config->{access_token}, $config->{access_secret});
     if ($oauth2_access_token) {
         delete $config->{access_secret};
         $config->{access_token} = $oauth2_access_token;
         $config_file->openw->print(encode_json($config));
-        warn "Auto migration OAuth1 Token to OAuth2 token.";
+        warn "=> Suucess.";
     } else {
         die "please setup.";
     }
 }
-# if ( my $access_level = delete $config->{access_level} ) {
-#     if ($access_level eq 'a') {
-#         $context = 'sandbox';
-#     }
-# }
+if (my $access_level = delete $config->{access_level}) {
+    if ($access_level eq 'a') {
+        print "sandbox is gone, Are you sure you want to delete from the config the access_leve? [y/n]: ";
+        chomp( my $y = <STDIN> );
+        if ($y =~ qr{ [yY] }xms) {
+            delete $config->{access_level};
+            $config_file->openw->print(encode_json($config));
+            warn "=> Suucess.";
+        } else {
+            die "canceled.";
+        }
+    }
+}
 
 $ENV{HTTP_PROXY} = $ENV{http_proxy} if !$ENV{HTTP_PROXY} && $ENV{http_proxy};
 $ENV{NO_PROXY} = $ENV{no_proxy} if !$ENV{NO_PROXY} && $ENV{no_proxy};
 
 my $box = WebService::Dropbox->new($config);
-# $box->root($context);
 $box->env_proxy if $env_proxy;
 
 # printf option
 my $strp;
-my $size = $human ? '_size' : 'size';
+
 my $format = {
-    i => 'icon', # Not available
+    # i => 'icon', # Not available
     b => 'size',
     e => 'thumb_exists', # jpg, jpeg, png, tiff, tif, gif or bmp
     d => '_is_dir',      # Check if .tag = "folder"
@@ -151,6 +161,8 @@ exit($exit_code);
 
 sub help {
     my ($command) = @_;
+
+    $command ||= '';
 
     my $help;
     if ($command eq 'ls' or $command eq 'list') {
@@ -349,8 +361,8 @@ sub help {
         See 'dropbox-api help <command>' for more information on a specific command.
         };
     }
-    $help=~s|^ {8}||mg;
-    $help=~s|^\s*\n||;
+    $help =~ s|^ {8}||mg;
+    $help =~ s|^\s*\n||;
     print "\n$help\n";
 }
 
@@ -420,6 +432,20 @@ sub _line {
     $strp ||= new DateTime::Format::Strptime( pattern => '%Y-%m-%dT%T' );
     my $dt;
     my $ct;
+    my $get = sub {
+        my $key = $format->{ $_[0] };
+        if ($key eq '_size') {
+            return exists $content->{size} ? format_bytes($content->{size}) : '   -';
+        } elsif ($key eq 'thumb_exists') {
+            if ($content->{path_display} =~ qr{ \.(?:jpg|jpeg|png|tiff|tif|gif|bmp) \z }xms && $content->{size} < 20 * 1024 * 1024) {
+                return 'true';
+            } else {
+                return 'false';
+            }
+        } else {
+            return exists $content->{ $key } ? $content->{ $key } : '-';
+        }
+    };
     if ($printf) {
         my $line = eval qq{"$printf"};
         $content->{_is_dir} = $content->{'.tag'} eq 'folder' ? 'd' : '-';
@@ -441,27 +467,13 @@ sub _line {
             $line=~s/\%CY/----/g;
             $line=~s/\%C([^\%])/--/g;
         }
-        my $get = sub {
-            my $key = $format->{ $_[0] };
-            if ($key eq '_size') {
-                return exists $content->{size} ? format_bytes($content->{size}) : '   -';
-            } elsif ($key eq 'thumb_exists') {
-                if ($content->{path_display} =~ qr{ \.(?:jpg|jpeg|png|tiff|tif|gif|bmp) \z }xms && $content->{size} < 20 * 1024 * 1024) {
-                    return 'true';
-                } else {
-                    return 'false';
-                }
-            } else {
-                return exists $content->{ $key } ? $content->{ $key } : '-';
-            }
-        };
         $line=~s|\%([^\%])|$get->($1)|eg;
         return $line;
     } else {
         return sprintf "%s %8s %s %s\n",
             ($content->{'.tag'} eq 'folder' ? 'd' : '-'),
-            ($content->{'.tag'} eq 'folder' ? '-' : $content->{$size}),
-            ($content->{'.tag'} eq 'folder' ? '-' : $content->{server_modified}),
+            $get->($human ? 's' : 'b'),
+            $get->('t'),
             $content->{path_display};
     }
 }
@@ -806,11 +818,16 @@ sub put {
         if ($total == $limit) {
             $data->{upload_id} or die $file . ' read error.';
             print "\n";
-            return $box->commit_chunked_upload(
+            my $ret = $box->commit_chunked_upload(
                 $path, {
                     upload_id => $data->{upload_id},
                     ( $params ? %$params : () )
-                }) or die $box->error;
+                });
+            if ($ret) {
+                return $ret;
+            } else {
+                die $box->error;
+            }
         }
 
         $tmp->flush;

@@ -15,3 +15,5 @@ tool
 !META.json
 !LICENSE
 /App-dropboxapi-*
+local
+cpanfile.snapshot
