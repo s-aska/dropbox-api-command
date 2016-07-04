@@ -452,8 +452,7 @@ sub _line {
                     return 'false';
                 }
             } else {
-                my $val = $content->{ $key };
-                return defined $val ? $val : '';
+                return exists $content->{ $key } ? $content->{ $key } : '-';
             }
         };
         $line=~s|\%([^\%])|$get->($1)|eg;
