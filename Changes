@@ -1,6 +1,8 @@
 Revision history for dropbox-api
 
 {{$NEXT}}
+
+2.00 2016-07-11T11:06:31Z
         - Migration API v2
 
 1.17    Jun 18, 2014
