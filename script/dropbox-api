@@ -16,7 +16,7 @@ use Path::Class;
 use POSIX qw();
 use WebService::Dropbox 2.04;
 
-our $VERSION = '2.00';
+our $VERSION = '2.01';
 
 my $limit = 10 * 1024 * 1024; # files_put_chunked method has large file support.
 
@@ -83,14 +83,14 @@ if ($config->{access_secret}) {
 }
 if (my $access_level = delete $config->{access_level}) {
     if ($access_level eq 'a') {
-        print "sandbox is gone, Are you sure you want to delete from the config the access_leve? [y/n]: ";
+        print "sandbox is gone, Are you sure you want to delete from the config the access_level? [y/n]: ";
         chomp( my $y = <STDIN> );
         if ($y =~ qr{ [yY] }xms) {
             delete $config->{access_level};
             $config_file->openw->print(encode_json($config));
             warn "=> Suucess.";
         } else {
-            die "canceled.";
+            die "cancelled.";
         }
     }
 }
@@ -370,9 +370,8 @@ sub setup {
     $box->env_proxy if $env_proxy;
     my $login_link = $box->authorize;
     die $box->error if $box->error;
-    print "URL: $login_link\n";
-    print "Please Access URL\n";
-    print "Please Input code and press Enter: ";
+    print "1. Open the Login URL: $login_link\n";
+    print "2. Input code and press Enter: ";
     chomp( my $code = <STDIN> );
     unless ($box->token($code)) {
         die $box->error;

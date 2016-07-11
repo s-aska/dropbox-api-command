@@ -1,7 +1,7 @@
 package App::dropboxapi;
 use strict;
 use warnings;
-our $VERSION = '2.00';
+our $VERSION = '2.01';
 
 =head1 NAME
 
@@ -80,13 +80,8 @@ dropbox-api is a command line interface to access Dropbox API.
     > dropbox-api setup
     Please Input API Key: ***************
     Please Input API Secret: ***************
-    Please Input Access type
-      a ... App folder - Your app only needs access to a single folder within the user's Dropbox
-      f ... Full Dropbox - Your app needs access to the user's entire Dropbox
-    [a or f]: *
-    URL: http://api.dropbox.com/0/oauth/authorize?oauth_token=***************&oauth_callback=
-    Please Access URL and press Enter
-    OK?
+    1. Open the Login URL: https://www.dropbox.com/oauth2/authorize?client_id=*****&response_type=code
+    2. Input code and press Enter: ***************
     success! try
     > dropbox-api ls
     > dropbox-api find /
@@ -132,6 +127,7 @@ dropbox-api help [<command>]
         -e enable env_proxy ( HTTP_PROXY, NO_PROXY )
         -D enable debug
         -v verbose
+        -s sandbox mode, but this option has been removed.
 
     See 'dropbox-api help <command>' for more information on a specific command.
 

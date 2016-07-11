@@ -1,6 +1,10 @@
 Revision history for dropbox-api
 
 {{$NEXT}}
+        - Fix typo and misspell.
+        - Add `-s` option documented.
+        - Fix setup example.
+        Thanks mathstuf
 
 2.00 2016-07-11T11:06:31Z
         - Migration API v2
