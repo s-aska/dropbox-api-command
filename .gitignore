@@ -10,8 +10,11 @@ tool
 /dropbox-api-command-*
 /.build
 /_build_params
+/_build
 /Build
 !Build/
 !META.json
 !LICENSE
 /App-dropboxapi-*
+local
+cpanfile.snapshot

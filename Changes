@@ -1,5 +1,8 @@
 Revision history for dropbox-api
 
+{{$NEXT}}
+        - Migration API v2
+
 1.17    Jun 18, 2014
         - fix bug `next` => `return`
 

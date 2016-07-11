@@ -1,7 +1,7 @@
 package App::dropboxapi;
 use strict;
 use warnings;
-our $VERSION = '1.17';
+our $VERSION = '2.00';
 
 =head1 NAME
 
@@ -17,7 +17,85 @@ Run C<dropbox-api help> for more options.
 
 dropbox-api is a command line interface to access Dropbox API.
 
-has many sub-commands ... ls, find, sync, cp, mv, rm, mkdir, get, put, uid
+=over 4
+
+=item ls
+
+=item find
+
+=item sync
+
+=item cp
+
+=item mv
+
+=item rm
+
+=item mkdir
+
+=item get
+
+=item put
+
+=back
+
+=head1 Install and Setup
+
+=head2 1. Install
+
+=head3 1-a) FreeBSD
+
+    pkg_add -r dropbox-api-command
+
+=head3 1-b) Ubuntu
+
+    sudo apt-get install make gcc libssl-dev wget
+    wget https://raw.github.com/miyagawa/cpanminus/master/cpanm
+    sudo perl cpanm App::dropboxapi
+
+=head3 1-c) CentOS
+
+    # CentOS 5
+    sudo yum install gcc gcc-c++ openssl-devel wget
+    # CentOS 6
+    sudo yum install gcc gcc-c++ openssl-devel wget perl-devel
+    wget https://raw.github.com/miyagawa/cpanminus/master/cpanm
+    sudo perl cpanm App::dropboxapi
+
+=head3 1-d) OS X
+
+    # Install Command Line Tools for Xcode
+    open https://www.google.com/search?q=Command+Line+Tools+for+Xcode
+
+    curl -O https://raw.github.com/miyagawa/cpanminus/master/cpanm
+    sudo perl cpanm App::dropboxapi
+
+=head2 2. Get API Key and API Secret
+
+    https://www.dropbox.com/developers
+    My Apps => Create an App
+
+=head2 3. Get Access Token and Access Secret
+
+    > dropbox-api setup
+    Please Input API Key: ***************
+    Please Input API Secret: ***************
+    Please Input Access type
+      a ... App folder - Your app only needs access to a single folder within the user's Dropbox
+      f ... Full Dropbox - Your app needs access to the user's entire Dropbox
+    [a or f]: *
+    URL: http://api.dropbox.com/0/oauth/authorize?oauth_token=***************&oauth_callback=
+    Please Access URL and press Enter
+    OK?
+    success! try
+    > dropbox-api ls
+    > dropbox-api find /
+
+=head2 4. How to use Proxy
+
+Please use -e option.
+
+    > HTTP_PROXY="http://127.0.0.1:8888" dropbox-api setup -e
 
 =head1 Sub Commands
 
@@ -49,7 +127,11 @@ dropbox-api help [<command>]
         put   upload file
         get   download file
         sync  sync directory (local => dropbox or dropbox => local)
-        uid   get accound uid
+
+    Common Options
+        -e enable env_proxy ( HTTP_PROXY, NO_PROXY )
+        -D enable debug
+        -v verbose
 
     See 'dropbox-api help <command>' for more information on a specific command.
 
@@ -71,15 +153,19 @@ dropbox-api help [<command>]
         -h print sizes in human readable format (e.g., 1K 234M 2G)
         -p print format.
             %d ... is_dir ( d: dir, -: file )
-            %p ... path
+            %i ... id
+            %n ... name
+            %p ... path_display
+            %P ... path_lower
             %b ... bytes
             %s ... size (e.g., 1K 234M 2G)
-            %i ... icon
-            %e ... thumb_exists
-            %M ... mime_type
-            %t ... modified time
-            %r ... revision
-            %Tk ... DateTime 'strftime' function
+            %t ... server_modified
+            %c ... client_modified
+            %r ... rev
+            %Tk ... DateTime 'strftime' function (server_modified)
+            %Ck ... DateTime 'strftime' function (client_modified)
+
+L<http://search.cpan.org/dist/DateTime/lib/DateTime.pm#strftime_Patterns>
 
 =head2 ls
 
@@ -120,17 +206,19 @@ print format.
     -       287.7KB 2010/12/26 21:55:59     /product/ex.zip
 
         %d ... is_dir ( d: dir, -: file )
-        %p ... path
+        %i ... id
+        %n ... name
+        %p ... path_display
+        %P ... path_lower
         %b ... bytes
         %s ... size (e.g., 1K 234M 2G)
-        %i ... icon
-        %e ... thumb_exists
-        %M ... mime_type
-        %t ... modified time
-        %r ... revision
+        %t ... server_modified
+        %c ... client_modified
+        %r ... rev
+        %Tk ... DateTime 'strftime' function (server_modified)
+        %Ck ... DateTime 'strftime' function (client_modified)
 
-        %Tk ... DateTime 'strftime' function
-                <http://search.cpan.org/dist/DateTime/lib/DateTime.pm#strftime_Patterns>
+L<http://search.cpan.org/dist/DateTime/lib/DateTime.pm#strftime_Patterns>
 
 =head2 find
 
@@ -360,16 +448,25 @@ dropbox-api put <file> dropbox:<dropbox_dir>
 
 A progress bar is displayed.
 
-    dropbox-api put /tmp/1GB.dat dropbox:/Public/
+    dropbox-api put /tmp/1GB.dat dropbox:/Public/ -v
     100% [=====================================================================================>]
 
-=head2 uid
+=head2 Tips
 
-Get your accound UID
+=head3 Retry
 
-=head3 Example
+    #!/bin/bash
 
-    dropbox-api uid
+    command='dropbox-api sync dropbox:/test/ /Users/aska/test/ -vde'
+
+    NEXT_WAIT_TIME=0
+    EXIT_CODE=0
+    until $command || [ $NEXT_WAIT_TIME -eq 4 ]; do
+        EXIT_CODE=$?
+        sleep $NEXT_WAIT_TIME
+        let NEXT_WAIT_TIME=NEXT_WAIT_TIME+1
+    done
+    exit $EXIT_CODE
 
 =head1 COPYRIGHT
 
