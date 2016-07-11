@@ -47,7 +47,7 @@
             "Encode::UTF8Mac" : "0",
             "JSON" : "0",
             "Path::Class" : "0.26",
-            "WebService::Dropbox" : "2.04",
+            "WebService::Dropbox" : "2.05",
             "perl" : "5.008001"
          }
       }
@@ -64,7 +64,7 @@
          "web" : "https://github.com/s-aska/dropbox-api-command"
       }
    },
-   "version" : "2.01",
+   "version" : "2.02",
    "x_authority" : "cpan:ASKADNA",
    "x_contributors" : [
       "Sylvain Filteau <cidsphere@gmail.com>",

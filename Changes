@@ -1,6 +1,7 @@
 Revision history for dropbox-api
 
 {{$NEXT}}
+        - Update cpanfile
 
 2.01 2016-07-11T13:17:43Z
         - Fix typo and misspell.

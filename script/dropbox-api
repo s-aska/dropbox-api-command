@@ -14,9 +14,9 @@ use Getopt::Std;
 use JSON;
 use Path::Class;
 use POSIX qw();
-use WebService::Dropbox 2.04;
+use WebService::Dropbox 2.05;
 
-our $VERSION = '2.01';
+our $VERSION = '2.02';
 
 my $limit = 10 * 1024 * 1024; # files_put_chunked method has large file support.
 
