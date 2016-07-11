@@ -1,3 +1,4 @@
 name = "App-dropboxapi"
 authority = "cpan:ASKADNA"
 badges = ['travis']
+markdown_maker = "Pod::Markdown::Github"
