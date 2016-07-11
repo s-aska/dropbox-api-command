@@ -1,6 +1,7 @@
 Revision history for dropbox-api
 
 {{$NEXT}}
+        - Support `ls /` and `find /`
 
 2.02 2016-07-11T15:00:38Z
         - Update cpanfile

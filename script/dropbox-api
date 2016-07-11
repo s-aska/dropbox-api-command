@@ -16,7 +16,7 @@ use Path::Class;
 use POSIX qw();
 use WebService::Dropbox 2.05;
 
-our $VERSION = '2.02';
+our $VERSION = '2.03';
 
 my $limit = 10 * 1024 * 1024; # files_put_chunked method has large file support.
 
@@ -391,6 +391,9 @@ sub setup {
 
 sub list {
     my $remote_base = decode('locale_fs', slash(shift));
+    if ($remote_base eq '/') {
+        $remote_base = '';
+    }
     my $list = $box->list_folder($remote_base) or die $box->error;
     for my $entry (@{ $list->{entries} }) {
         print &_line($entry);
@@ -451,8 +454,8 @@ sub _line {
 
 sub find {
     my $remote_base = decode('locale_fs', slash(shift));
-    if ($remote_base !~ qr{ \A / }xms) {
-        $remote_base = '/' . $remote_base;
+    if ($remote_base eq '/') {
+        $remote_base = '';
     }
     $printf ||= "%p\n";
     my $list = $box->list_folder($remote_base, {
