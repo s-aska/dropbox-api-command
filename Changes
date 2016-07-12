@@ -1,6 +1,8 @@
 Revision history for dropbox-api
 
 {{$NEXT}}
+
+2.04 2016-07-12T11:30:53Z
         - Add `du` command
 
 2.03 2016-07-11T16:13:38Z
