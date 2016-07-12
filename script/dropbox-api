@@ -16,7 +16,7 @@ use Path::Class;
 use POSIX qw();
 use WebService::Dropbox 2.05;
 
-our $VERSION = '2.04';
+our $VERSION = '2.05';
 
 my $limit = 10 * 1024 * 1024; # files_put_chunked method has large file support.
 
@@ -425,8 +425,8 @@ sub du {
         }
         my @paths = _paths($remote_base, $content->{path_lower});
         for my $path (@paths) {
-            $dir_map->{ $path } ||= 0;
-            $dir_map->{ $path } += $content->{size};
+            $dir_map->{ lc $path } ||= 0;
+            $dir_map->{ lc $path } += $content->{size};
         }
     }
     if (!$remote_base) {
@@ -448,7 +448,7 @@ sub du {
                 next;
             }
         }
-        my $size = $dir_map->{ $content->{path_lower} } || 0;
+        my $size = $dir_map->{ lc $content->{path_lower} } || 0;
         if ($human) {
             $size = format_bytes($size);
         }
