@@ -1,7 +1,7 @@
 package App::dropboxapi;
 use strict;
 use warnings;
-our $VERSION = '2.03';
+our $VERSION = '2.04';
 
 =head1 NAME
 
@@ -22,6 +22,8 @@ dropbox-api is a command line interface to access Dropbox API.
 =item ls
 
 =item find
+
+=item du
 
 =item sync
 
@@ -115,6 +117,7 @@ dropbox-api help [<command>]
         setup get access_key and access_secret
         ls    list directory contents
         find  walk a file hierarchy
+        du    disk usage statistics
         cp    copy file or directory
         mv    move file or directory
         mkdir make directory (Create intermediate directories as required)
@@ -248,6 +251,37 @@ dropbox-api find <dropbox_path> [options]
 =head3 printf option ( -p )
 
 see also list command's printf option.
+
+=head2 du
+
+display disk usage statistics.
+
+=over 4
+
+=item syntax
+
+dropbox-api du <dropbox_path> [options]
+
+=back
+
+=head3 Example
+
+    > dropbox-api du /product -h -d 1
+    1.1M    /product
+    1.1M    /product/chrome-extensions
+      0B    /product/work
+
+=head3 human readable option ( -h )
+
+print sizes in human readable format (e.g., 1K 234M 2G)
+
+    > dropbox-api ls /product -h
+    d        - Thu, 24 Feb 2011 06:58:00 +0000 /product/chrome-extentions
+    -  287.7KB Sun, 26 Dec 2010 21:55:59 +0000 /product/ex.zip
+
+=head3 depth option ( -d )
+
+Display an entry for all files and directories depth directories deep.
 
 =head2 sync ( rsync )
 

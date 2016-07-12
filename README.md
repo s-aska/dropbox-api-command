@@ -17,6 +17,7 @@ dropbox-api is a command line interface to access Dropbox API.
 
 - ls
 - find
+- du
 - sync
 - cp
 - mv
@@ -112,6 +113,7 @@ Available commands:
     setup get access_key and access_secret
     ls    list directory contents
     find  walk a file hierarchy
+    du    disk usage statistics
     cp    copy file or directory
     mv    move file or directory
     mkdir make directory (Create intermediate directories as required)
@@ -248,6 +250,37 @@ recursive file list view.
 ### printf option ( -p )
 
 see also list command's printf option.
+
+## du
+
+display disk usage statistics.
+
+- syntax
+
+    dropbox-api du &lt;dropbox\_path> \[options\]
+
+### Example
+
+```
+> dropbox-api du /product -h -d 1
+1.1M    /product
+1.1M    /product/chrome-extensions
+  0B    /product/work
+```
+
+### human readable option ( -h )
+
+print sizes in human readable format (e.g., 1K 234M 2G)
+
+```
+> dropbox-api ls /product -h
+d        - Thu, 24 Feb 2011 06:58:00 +0000 /product/chrome-extentions
+-  287.7KB Sun, 26 Dec 2010 21:55:59 +0000 /product/ex.zip
+```
+
+### depth option ( -d )
+
+Display an entry for all files and directories depth directories deep.
 
 ## sync ( rsync )
 

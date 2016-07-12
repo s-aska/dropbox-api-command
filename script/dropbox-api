@@ -16,7 +16,7 @@ use Path::Class;
 use POSIX qw();
 use WebService::Dropbox 2.05;
 
-our $VERSION = '2.03';
+our $VERSION = '2.04';
 
 my $limit = 10 * 1024 * 1024; # files_put_chunked method has large file support.
 
@@ -32,13 +32,17 @@ my $config_file = file( $ENV{DROPBOX_CONF} || ($ENV{HOME} || $ENV{HOMEPATH}, '.d
 
 my $command = shift || '';
 my @args;
-for (@{[@ARGV]}) {
-    last if $_=~/^-/;
+for (@{ [ @ARGV ] }) {
+    last if $_ =~ qr{ \A - }xms;
     push @args, shift;
 }
 
 my %opts;
-getopts('ndvDsherPp:', \%opts);
+if ($command eq 'du') {
+    getopts('vDhed:', \%opts);
+} else {
+    getopts('ndvDshePp:', \%opts);
+}
 
 push @args, @ARGV;
 
@@ -50,6 +54,7 @@ my $human     = $opts{h};
 my $printf    = $opts{p};
 my $public    = $opts{P};
 my $env_proxy = $opts{e};
+my $max_depth = $opts{d};
 
 if ($opts{s}) {
     die "-s is gone.";
@@ -136,6 +141,8 @@ if ($command eq 'ls' or $command eq 'list') {
     &list(@args);
 } elsif ($command eq 'find') {
     &find(@args);
+} elsif ($command eq 'du') {
+    &du(@args);
 } elsif ($command eq 'copy' or $command eq 'cp') {
     &copy(@args);
 } elsif ($command eq 'move' or $command eq 'mv') {
@@ -173,9 +180,9 @@ sub help {
             dropbox-api ls <dropbox_path> [options]
 
         Example
-            dropbox-api ls Public
-            dropbox-api ls Public -h
-            dropbox-api ls Public -p "%d\t%s\t%TY/%Tm/%Td %TH:%TM:%TS\t%p\n"
+            dropbox-api ls /Public
+            dropbox-api ls /Public -h
+            dropbox-api ls /Public -p "%d\t%s\t%TY/%Tm/%Td %TH:%TM:%TS\t%p\n"
 
         Options
             -h print sizes in human readable format (e.g., 1K 234M 2G)
@@ -202,9 +209,9 @@ sub help {
             dropbox-api find <dropbox_path> [options]
 
         Example
-            dropbox-api find Public
-            dropbox-api find Public -h
-            dropbox-api find Public -p "%d\t%s\t%TY/%Tm/%Td %TH:%TM:%TS\t%p\n"
+            dropbox-api find /Public
+            dropbox-api find /Public -h
+            dropbox-api find /Public -p "%d\t%s\t%TY/%Tm/%Td %TH:%TM:%TS\t%p\n"
 
         Options
             -h print sizes in human readable format (e.g., 1K 234M 2G)
@@ -222,6 +229,23 @@ sub help {
                 %Tk ... DateTime 'strftime' function (server_modified)
                 %Ck ... DateTime 'strftime' function (client_modified)
         };
+    } elsif ($command eq 'du') {
+        $help = q{
+        Name
+            dropbox-api-du - list directory contents
+
+        SYNOPSIS
+            dropbox-api du <dropbox_path> [options]
+
+        Example
+            dropbox-api du /Public
+            dropbox-api du / -h
+            dropbox-api du / -d 1
+
+        Options
+            -h print sizes in human readable format (e.g., 1K 234M 2G)
+            -d depth.
+        };
     } elsif ($command eq 'copy' or $command eq 'cp') {
         $help = q{
         Name
@@ -231,8 +255,8 @@ sub help {
             dropbox-api cp <source_file> <target_file>
 
         Example
-            dropbox-api cp Public/hoge.txt Public/foo.txt
-            dropbox-api cp Public/work Public/work_bak
+            dropbox-api cp /Public/hoge.txt /Public/foo.txt
+            dropbox-api cp /Public/work /Public/work_bak
         };
     } elsif ($command eq 'move' or $command eq 'mv') {
         $help = q{
@@ -243,8 +267,8 @@ sub help {
             dropbox-api mv <source_file> <target_file>
 
         Example
-            dropbox-api mv Public/hoge.txt Public/foo.txt
-            dropbox-api mv Public/work Public/work_bak
+            dropbox-api mv /Public/hoge.txt /Public/foo.txt
+            dropbox-api mv /Public/work /Public/work_bak
         };
     } elsif ($command eq 'mkdir' or $command eq 'mkpath') {
         $help = q{
@@ -255,7 +279,7 @@ sub help {
             dropbox-api mkdir <directory>
 
         Example
-            dropbox-api mkdir Public/product/chrome-extentions/foo
+            dropbox-api mkdir /Public/product/chrome-extentions/foo
         };
     } elsif ($command eq 'delete' or $command eq 'rm' or $command eq 'rmtree') {
         $help = q{
@@ -266,8 +290,8 @@ sub help {
             dropbox-api rm <file_or_directory>
 
         Example
-            dropbox-api rm Public/work_bak/hoge.tmp
-            dropbox-api rm Public/work_bak
+            dropbox-api rm /Public/work_bak/hoge.tmp
+            dropbox-api rm /Public/work_bak
         };
     } elsif ($command eq 'upload' or $command eq 'up' or $command eq 'put') {
         $help = q{
@@ -332,6 +356,7 @@ sub help {
             setup get access_key and access_secret
             ls    list directory contents
             find  walk a file hierarchy
+            du    disk usage statistics
             cp    copy file or directory
             mv    move file or directory
             mkdir make directory (Create intermediate directories as required)
@@ -387,6 +412,66 @@ sub setup {
     chmod 0600, $config_file;
 
     exit(0);
+}
+
+sub du {
+    my $remote_base = decode('locale_fs', slash(shift));
+    $remote_base =~ s|/$||;
+    my $entries = _find($remote_base);
+    my $dir_map = {};
+    for my $content (@{ $entries }) {
+        if ($content->{'.tag'} eq 'folder') {
+            next;
+        }
+        my @paths = _paths($remote_base, $content->{path_lower});
+        for my $path (@paths) {
+            $dir_map->{ $path } ||= 0;
+            $dir_map->{ $path } += $content->{size};
+        }
+    }
+    if (!$remote_base) {
+        my $size = $dir_map->{'/'} || 0;
+        if ($human) {
+            $size = format_bytes($size);
+        }
+        printf("%s\t%s\n", $size, '/');
+    }
+    for my $content (@{ $entries }) {
+        if ($content->{'.tag'} ne 'folder') {
+            next;
+        }
+        if (defined $max_depth) {
+            my $path = $content->{path_lower};
+            $path =~ s|^\Q$remote_base\E/?||i;
+            my $depth = $path ? scalar(split('/', $path)) : 0;
+            if ($depth > $max_depth) {
+                next;
+            }
+        }
+        my $size = $dir_map->{ $content->{path_lower} } || 0;
+        if ($human) {
+            $size = format_bytes($size);
+        }
+        printf("%s\t%s\n", $size, $content->{path_display});
+    }
+}
+
+sub _paths ($$) {
+    my ($base_path, $path) = @_;
+    $path =~ s|^\Q$base_path\E/?||i;
+    my @paths;
+    my $dir = $base_path || '/';
+    push @paths, $dir;
+    my @names = split '/', $path;
+    pop @names;
+    for my $name (@names) {
+        if ($dir ne '/') {
+            $dir .= '/';
+        }
+        $dir .= $name;
+        push @paths, $dir;
+    }
+    return @paths;
 }
 
 sub list {
@@ -458,13 +543,45 @@ sub find {
         $remote_base = '';
     }
     $printf ||= "%p\n";
-    my $list = $box->list_folder($remote_base, {
-        recursive => JSON::true,
-    }) or die $box->error;
-    my @entries = sort { $a->{path_lower} cmp $b->{path_lower} } @{ $list->{entries} };
-    for my $entry (@entries) {
+    my $entries = _find($remote_base);
+    for my $entry (@{ $entries }) {
         print &_line($entry);
     }
+}
+
+sub _find ($) {
+    my $remote_base = decode('locale_fs', slash(shift));
+    if ($remote_base eq '/') {
+        $remote_base = '';
+    }
+    my @entries;
+    my $fetch;
+    my $count = 0;
+    $fetch = sub {
+        my $cursor = shift;
+        my $list;
+        if ($cursor) {
+            $list = $box->list_folder_continue($cursor) or die $box->error;
+        } else {
+            $list = $box->list_folder($remote_base, {
+                recursive => JSON::true,
+            }) or die $box->error;
+        }
+        push @entries, @{ $list->{entries} };
+        if ($list->{has_more}) {
+            if ($verbose) {
+                $| = 1;
+                $count++;
+                printf("\r" . (('.') x $count));
+            }
+            $fetch->($list->{cursor});
+        }
+    };
+    $fetch->();
+    if ($verbose) {
+        print "\n";
+    }
+    [ sort { $a->{path_lower} cmp $b->{path_lower} } @entries ];
 }
 
 sub copy {
@@ -587,11 +704,8 @@ sub sync_download {
     my $remote_map = {};
     my $remote_inode_map = {};
 
-    my $list = $box->list_folder($remote_base, {
-        recursive => JSON::true,
-    }) or die $box->error;
-    my @entries = sort { $a->{path_lower} cmp $b->{path_lower} } @{ $list->{entries} };
-    for my $content (@entries) {
+    my $entries = _find($remote_base);
+    for my $content (@{ $entries }) {
         my $remote_path = $content->{path_display};
         my $rel_path = remote_abs2rel($remote_path, $remote_base);
         unless (length $rel_path) {
@@ -738,11 +852,8 @@ sub sync_upload {
     my $remote_map = {};
     my $remote_path_map = {};
 
-    my $list = $box->list_folder($remote_base, {
-        recursive => JSON::true,
-    }) or die $box->error;
-    my @entries = sort { $a->{path_lower} cmp $b->{path_lower} } @{ $list->{entries} };
-    for my $content (@entries) {
+    my $entries = _find($remote_base);
+    for my $content (@{ $entries }) {
         my $remote_path = $content->{path_display};
         my $rel_path = remote_abs2rel($remote_path, $remote_base);
         unless (length $rel_path) {
@@ -968,10 +1079,14 @@ sub remote_abs2rel ($$) {
 }
 
 sub slash ($) {
-    if ($_[0] !~ qr{ \A / }xms) {
-        $_[0] = '/' . $_[0];
+    my $path = shift;
+    unless (defined $path) {
+        return '/';
     }
-    $_[0];
+    if ($path !~ qr{ \A / }xms) {
+        $path = '/' . $path;
+    }
+    $path;
 }
 
 sub pretty($) {
@@ -989,14 +1104,16 @@ use constant UNITS => [
 
 sub format_bytes ($) {
     my $size = shift;
-    for my $unit (@{ UNITS() }) {
-        my ($unit_label, $unit_min, $unit_value) = @{ $unit };
-        if ($size >= $unit_min) {
-            my $size_unit = $size / $unit_value;
-            if (round($size_unit) < 10) {
-                return sprintf('%1.1f%s', nearest(.1, $size_unit), $unit_label);
-            } else {
-                return sprintf('%3s%s', round($size_unit), $unit_label);
+    if ($size > 0) {
+        for my $unit (@{ UNITS() }) {
+            my ($unit_label, $unit_min, $unit_value) = @{ $unit };
+            if ($size >= $unit_min) {
+                my $size_unit = $size / $unit_value;
+                if (round($size_unit) < 10) {
+                    return sprintf('%1.1f%s', nearest(.1, $size_unit), $unit_label);
+                } else {
+                    return sprintf('%3s%s', round($size_unit), $unit_label);
+                }
             }
         }
     }

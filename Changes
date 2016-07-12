@@ -1,6 +1,7 @@
 Revision history for dropbox-api
 
 {{$NEXT}}
+        - Add `du` command
 
 2.03 2016-07-11T16:13:38Z
         - Support `ls /` and `find /`
