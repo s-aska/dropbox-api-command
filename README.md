@@ -272,12 +272,6 @@ display disk usage statistics.
 
 print sizes in human readable format (e.g., 1K 234M 2G)
 
-```
-> dropbox-api ls /product -h
-d        - Thu, 24 Feb 2011 06:58:00 +0000 /product/chrome-extentions
--  287.7KB Sun, 26 Dec 2010 21:55:59 +0000 /product/ex.zip
-```
-
 ### depth option ( -d )
 
 Display an entry for all files and directories depth directories deep.
