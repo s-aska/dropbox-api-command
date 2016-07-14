@@ -16,7 +16,7 @@ use Path::Class;
 use POSIX qw();
 use WebService::Dropbox 2.05;
 
-our $VERSION = '2.06';
+our $VERSION = '2.07';
 
 my $limit = 10 * 1024 * 1024; # files_put_chunked method has large file support.
 
@@ -106,8 +106,7 @@ $ENV{NO_PROXY} = $ENV{no_proxy} if !$ENV{NO_PROXY} && $ENV{no_proxy};
 my $box = WebService::Dropbox->new($config);
 $box->env_proxy if $env_proxy;
 
-# printf option
-my $strp;
+my $strp = new DateTime::Format::Strptime( pattern => '%Y-%m-%dT%T' );
 
 my $format = {
     i => 'id',
@@ -653,7 +652,7 @@ sub upload {
 
 sub download {
     my ($path, $file) = @_;
-    $path=~s|^dropbox:/|/|
+    $path =~ s|^dropbox:/|/|
         or die "Usage: \n    dropbox-api download dropbox:/Public/some.txt /tmp/local.txt";
     my $fh = file($file)->openw or die $!;
     $box->download(decode('locale_fs', $path), $fh) or die $box->error;
@@ -663,56 +662,79 @@ sub download {
 sub sync {
     my ($arg1, $arg2) = @_;
 
-    my ($remote_base, $local_base, $command);
+    if ($dry) {
+        print "!! enable dry run !!\n";
+    }
+
+    # download
     if ($arg1 =~ qr{ \A dropbox: }xms and $arg2 !~ qr{ \A dropbox: }xms) {
-        ($remote_base, $local_base) = ($arg1, $arg2);
-        $command = \&sync_download;
-    } elsif ($arg1 !~ qr{ \A dropbox: }xms and $arg2 =~ qr{ \A dropbox: }xms) {
-        ($remote_base, $local_base) = ($arg2, $arg1);
-        $command = \&sync_upload;
-    } else {
+
+        my ($remote_base, $local_base) = ($arg1, $arg2);
+        $remote_base = decode('locale_fs', $remote_base);
+        $remote_base =~ s|^dropbox:/|/|;
+
+        my $content = $box->get_metadata(chomp_slash($remote_base)) or die $box->error;
+        if ($content->{'.tag'} eq 'folder') {
+            unless (-d $local_base) {
+                die "missing $local_base";
+            }
+            &sync_download($content->{path_display}, dir(abs_path($local_base)));
+        } else {
+            $local_base = -d $local_base ? dir(abs_path($local_base)) : -f $local_base ? file(abs_path($local_base)) : file($local_base);
+            &sync_download_file($content, file($local_base));
+        }
+    }
+
+    # upload
+    elsif ($arg1 !~ qr{ \A dropbox: }xms and $arg2 =~ qr{ \A dropbox: }xms) {
+
+        my ($local_base, $remote_base) = ($arg1, $arg2);
+        $remote_base = decode('locale_fs', $remote_base);
+        $remote_base =~ s|^dropbox:/|/|;
+
+        if (-d $local_base) {
+            &sync_upload($remote_base, dir(abs_path($local_base)));
+        } elsif (-f $local_base) {
+            &sync_upload_file($remote_base, file(abs_path($local_base)));
+        } else {
+            die "missing $local_base";
+        }
+    }
+
+    # invalid command
+    else {
         die "Usage: \n    dropbox-api sync dropbox:/Public/ /tmp/pub/\n" .
                    "or    dropbox-api sync /tmp/pub/ dropbox:/Public/";
     }
-
-    unless (-d $local_base) {
-        die "missing $local_base";
-    }
-
-    $local_base = dir(abs_path($local_base));
-
-    $remote_base = decode('locale_fs', $remote_base);
-
-    $remote_base =~ s|^dropbox:/|/|;
-
-    if ($remote_base ne '/') {
-        my $content = $box->get_metadata($remote_base) or die $box->error;
-        $remote_base = $content->{path_display}; # Dropbox are case insensitive!
-    }
-
-    print "!! enable dry run !!\n" if $dry;
-    print "remote_base: $remote_base\n" if $verbose;
-    print "local_base: $local_base\n" if $verbose;
-
-    $command->($remote_base, $local_base);
 }
 
 sub sync_download {
     my ($remote_base, $local_base) = @_;
 
+    if ($verbose) {
+        print "remote_base: $remote_base\n";
+        print "local_base: $local_base\n";
+    }
+
     print "** download **\n" if $verbose;
 
-    my $strp = new DateTime::Format::Strptime( pattern => '%Y-%m-%dT%T' );
+    my $entries = _find($remote_base);
+    unless (@{ $entries }) {
+        return;
+    }
 
     my $remote_map = {};
     my $remote_inode_map = {};
 
-    my $entries = _find($remote_base);
     for my $content (@{ $entries }) {
         my $remote_path = $content->{path_display};
         my $rel_path = remote_abs2rel($remote_path, $remote_base);
         unless (length $rel_path) {
-            next;
+            if ($content->{'.tag'} eq 'folder') {
+                next;
+            } else {
+                $rel_path = $content->{name};
+            }
         }
         my $rel_path_enc = encode('locale_fs', $rel_path);
         $remote_map->{$rel_path}++;
@@ -729,16 +751,8 @@ sub sync_download {
                 printf "skip %s\n", $rel_path if $verbose;
             }
         } else {
-            my $remote_epoch = $strp->parse_datetime($content->{client_modified})->epoch;
-            my $local_epoch = -f $local_path ? $local_path->stat->mtime : '-';
-            my $remote_size = $content->{size};
-            my $local_size = -f $local_path ? $local_path->stat->size : '-';
-            if ($debug) {
-                printf "remote: %10s %10s %s\n", $remote_epoch, $remote_size, $remote_path;
-                printf "local:  %10s %10s %s\n", $local_epoch, $local_size, $local_path;
-            }
 
-            if ((!-f $local_path) || ($remote_size != $local_size) || ($remote_epoch > $local_epoch)) {
+            if ((!-f $local_path) || has_change($local_path, $content)) {
 
                 if ($dry) {
                     printf "download %s\n", decode('locale_fs', $local_path);
@@ -761,6 +775,7 @@ sub sync_download {
                 if ($box->download($content->{path_display}, $fh)) {
                     printf "download %s\n", decode('locale_fs', $local_path);
                     close($fh);
+                    my $remote_epoch = $strp->parse_datetime($content->{client_modified})->epoch;
                     unless (utime($remote_epoch, $remote_epoch, $local_path_tmp)) {
                         warn "set modification time failure " .  decode('locale_fs', $local_path);
                         $exit_code = 1;
@@ -845,12 +860,71 @@ sub sync_download {
     }
 }
 
+sub sync_download_file {
+    my ($content, $local_path) = @_;
+
+    if ($verbose) {
+        print "remote_base: " . $content->{name} . "\n";
+        print "local_base: $local_path\n";
+    }
+
+    if (-d $local_path) {
+        $local_path = file($local_path, $content->{name});
+    }
+
+    if ((!-f $local_path) || has_change($local_path, $content)) {
+
+        if ($dry) {
+            printf "download %s\n", decode('locale_fs', $local_path);
+            return;
+        }
+
+        unless (-d $local_path->dir) {
+            printf "mkpath %s\n", decode('locale_fs', $local_path->dir);
+            $local_path->dir->mkpath;
+        }
+
+        my $local_path_tmp = $local_path . '.dropbox-api.tmp';
+        my $fh;
+        unless (open($fh, '>', $local_path_tmp)) {
+            warn "open failure " . decode('locale_fs', $local_path) . " (" . $! . ")";
+            $exit_code = 1;
+            return;
+        }
+        if ($box->download($content->{path_display}, $fh)) {
+            printf "download %s\n", decode('locale_fs', $local_path);
+            close($fh);
+            my $remote_epoch = $strp->parse_datetime($content->{client_modified})->epoch;
+            unless (utime($remote_epoch, $remote_epoch, $local_path_tmp)) {
+                warn "set modification time failure " .  decode('locale_fs', $local_path);
+                $exit_code = 1;
+            }
+            unless (rename($local_path_tmp, $local_path)) {
+                unlink($local_path_tmp);
+                warn "rename failure " . decode('locale_fs', $local_path_tmp);
+                $exit_code = 1;
+            }
+        } else {
+            unlink($local_path_tmp);
+            chomp( my $error = $box->error );
+            warn "download failure " . decode('locale_fs', $local_path) . " (" . $error . ")";
+            $exit_code = 1;
+        }
+    } else {
+        printf "skip %s\n", $content->{path_display} if $verbose;
+    }
+}
+
 sub sync_upload {
     my ($remote_base, $local_base) = @_;
 
-    print "** upload **\n" if $verbose;
 
-    my $strp = new DateTime::Format::Strptime( pattern => '%Y-%m-%dT%T' );
+    if ($verbose) {
+        print "remote_base: $remote_base\n";
+        print "local_base: $local_base\n";
+    }
+
+    print "** upload **\n" if $verbose;
 
     my $remote_map = {};
     my $remote_path_map = {};
@@ -862,12 +936,13 @@ sub sync_upload {
         unless (length $rel_path) {
             next;
         }
-        $remote_map->{ $rel_path } = $content;
+        $remote_map->{ lc $rel_path } = $content;
         $remote_path_map->{ $content->{path_display} } = $content;
         if ($debug) {
             printf "find: %s\n", $rel_path;
         }
     }
+
     my @makedirs;
     $local_base->recurse(
         preorder => 0,
@@ -879,7 +954,7 @@ sub sync_upload {
             }
             my $rel_path = decode('locale_fs', abs2rel($local_path, $local_base));
             my $remote_path = file($remote_base, $rel_path);
-            my $content = delete $remote_map->{ $rel_path } || $box->get_metadata("$remote_path"); # Dropbox are case insensitive!
+            my $content = delete $remote_map->{ lc $rel_path };
 
             # exists file or directory
             if ($content) {
@@ -889,23 +964,14 @@ sub sync_upload {
                     return;
                 }
 
-                my $remote_epoch = $strp->parse_datetime($content->{client_modified})->epoch;
-                my $local_epoch = $local_path->stat->mtime;
-                my $remote_size = $content->{size};
-                my $local_size = $local_path->stat->size;
-
-                if ($debug) {
-                    printf "remote: %10s %10s %s\n", $remote_epoch, $remote_size, $content->{path_display};
-                    printf "local:  %10s %10s %s\n", $local_epoch, $local_size, decode('locale_fs', $local_path);
-                }
-
-                if (($remote_size != $local_size) || ($remote_epoch < $local_epoch)) {
-                    if ($remote_size == $local_size) {
-                        $box->delete("$remote_path");
-                    }
+                if (has_change($local_path, $content)) {
                     printf "upload %s %s\n", $rel_path, $remote_path;
                     unless ($dry) {
-                        &put($local_path, $remote_path, { client_modified => $strp->format_datetime(DateTime->from_epoch( epoch => $local_epoch )) . 'Z' }) or die $box->error;
+                        if ($content->{size} == -s $local_path) {
+                            $box->delete("$remote_path");
+                        }
+                        my $local_epoch = $local_path->stat->mtime;
+                        &put($local_path, "$remote_path", { client_modified => $strp->format_datetime(DateTime->from_epoch( epoch => $local_epoch )) . 'Z' }) or die $box->error;
                     }
                     push @makedirs, $rel_path;
                 } elsif ($verbose) {
@@ -917,7 +983,7 @@ sub sync_upload {
             elsif (-f $local_path) {
                 unless ($dry) {
                     my $local_epoch = $local_path->stat->mtime;
-                    &put($local_path, $remote_path, { client_modified => $strp->format_datetime(DateTime->from_epoch( epoch => $local_epoch )) . 'Z' });
+                    &put($local_path, "$remote_path", { client_modified => $strp->format_datetime(DateTime->from_epoch( epoch => $local_epoch )) . 'Z' });
                 }
                 if (!$dry && $box->error) {
                     warn "upload failure $rel_path $remote_path (" . $box->error . ")";
@@ -937,7 +1003,7 @@ sub sync_upload {
                 printf "mktree %s %s\n", $rel_path, $remote_path;
 
                 unless ($dry) {
-                    $box->create_folder($remote_path) or die $box->error;
+                    $box->create_folder("$remote_path") or die $box->error;
                 }
 
                 push @makedirs, $rel_path;
@@ -954,6 +1020,10 @@ sub sync_upload {
     my @deletes;
     for my $content_path ( keys %$remote_path_map ) {
 
+        if (chomp_slash($content_path) eq chomp_slash($remote_base)) {
+            next;
+        }
+
         if (grep { $content_path =~ qr{ \A\Q$_ }xms } @deletes) {
             next;
         }
@@ -966,6 +1036,90 @@ sub sync_upload {
 
         printf "delete %s\n", remote_abs2rel($content_path, $remote_base);
     }
+}
+
+sub sync_upload_file {
+    my ($remote_base, $local_path) = @_;
+
+    if ($verbose) {
+        print "remote_base: $remote_base\n";
+        print "local_path: $local_path\n";
+    }
+
+    my $remote_path;
+    my $content;
+    {
+        local $SIG{__WARN__} = sub {};
+
+        $content = $box->get_metadata(chomp_slash($remote_base));
+
+        # exists folder
+        if ($content && $content->{'.tag'} eq 'folder') {
+            $remote_path = file($remote_base, basename($local_path));
+            my $remote_file_content = $box->get_metadata(chomp_slash("$remote_path"));
+            if ($remote_file_content) {
+                if ($remote_file_content->{'.tag'} eq 'folder') {
+                    die "$remote_path is folder.";
+                }
+                $content = $remote_file_content;
+            }
+        } else {
+            if ($remote_base =~ qr{ / \z }xms) {
+                $remote_path = file($remote_base, basename($local_path));
+            } else {
+                $remote_path = $remote_base;
+            }
+        }
+    }
+
+    # exists file
+    if ($content && $content->{'.tag'} ne 'folder') {
+        if ($debug) {
+            printf "find: %s\n", $content->{path_display};
+        }
+        $remote_path = $content->{path_display};
+
+        if (has_change($local_path, $content)) {
+            printf "upload %s %s\n", $local_path, $remote_path;
+            unless ($dry) {
+                if ($content->{size} == -s $local_path) {
+                    $box->delete("$remote_path");
+                }
+                my $local_epoch = $local_path->stat->mtime;
+                &put($local_path, "$remote_path", { client_modified => $strp->format_datetime(DateTime->from_epoch( epoch => $local_epoch )) . 'Z' }) or die $box->error;
+            }
+        } elsif ($verbose) {
+            printf "skip %s\n", $local_path;
+        }
+        return;
+    }
+
+    unless ($dry) {
+        my $local_epoch = $local_path->stat->mtime;
+        &put($local_path, "$remote_path", { client_modified => $strp->format_datetime(DateTime->from_epoch( epoch => $local_epoch )) . 'Z' });
+    }
+
+    printf "upload %s %s\n", $local_path, $remote_path;
+}
+
+sub has_change ($$) {
+    my ($local_path, $content) = @_;
+
+    my $remote_epoch = $strp->parse_datetime($content->{client_modified})->epoch;
+    my $local_epoch = $local_path->stat->mtime;
+    my $remote_size = $content->{size};
+    my $local_size = $local_path->stat->size;
+
+    if ($debug) {
+        printf "remote: %10s %10s %s\n", $remote_epoch, $remote_size, $content->{path_display};
+        printf "local:  %10s %10s %s\n", $local_epoch, $local_size, decode('locale_fs', $local_path);
+    }
+
+    if (($remote_size != $local_size) || ($remote_epoch != $local_epoch)) {
+        return 1;
+    }
+
+    return;
 }
 
 sub put {
@@ -1089,6 +1243,15 @@ sub slash ($) {
     if ($path !~ qr{ \A / }xms) {
         $path = '/' . $path;
     }
+    $path;
+}
+
+sub chomp_slash ($) {
+    my $path = shift;
+    unless (defined $path) {
+        return '';
+    }
+    $path =~ s|/$||;
     $path;
 }
 

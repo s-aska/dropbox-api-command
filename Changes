@@ -1,6 +1,7 @@
 Revision history for dropbox-api
 
 {{$NEXT}}
+        - Add sync file `sync dropbox:/file.txt ~/Dropbox/` `sync ~/file.txt dropbox:/Dropbox/`
 
 2.06 2016-07-14T08:12:56Z
         - Fix bug `sync dropbox:/ ~/Dropbox/`
