@@ -1,6 +1,8 @@
 Revision history for dropbox-api
 
 {{$NEXT}}
+
+2.07 2016-07-14T12:12:15Z
         - Add sync file `sync dropbox:/file.txt ~/Dropbox/` `sync ~/file.txt dropbox:/Dropbox/`
 
 2.06 2016-07-14T08:12:56Z
