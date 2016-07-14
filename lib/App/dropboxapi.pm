@@ -1,7 +1,7 @@
 package App::dropboxapi;
 use strict;
 use warnings;
-our $VERSION = '2.05';
+our $VERSION = '2.06';
 
 =head1 NAME
 

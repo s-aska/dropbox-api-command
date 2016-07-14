@@ -16,7 +16,7 @@ use Path::Class;
 use POSIX qw();
 use WebService::Dropbox 2.05;
 
-our $VERSION = '2.05';
+our $VERSION = '2.06';
 
 my $limit = 10 * 1024 * 1024; # files_put_chunked method has large file support.
 
@@ -675,7 +675,9 @@ sub sync {
                    "or    dropbox-api sync /tmp/pub/ dropbox:/Public/";
     }
 
-    die "missing $local_base" unless -d $local_base;
+    unless (-d $local_base) {
+        die "missing $local_base";
+    }
 
     $local_base = dir(abs_path($local_base));
 
@@ -683,9 +685,10 @@ sub sync {
 
     $remote_base =~ s|^dropbox:/|/|;
 
-    my $content = $box->get_metadata($remote_base) or die $box->error;
-
-    $remote_base = $content->{path_display}; # Dropbox are case insensitive!
+    if ($remote_base ne '/') {
+        my $content = $box->get_metadata($remote_base) or die $box->error;
+        $remote_base = $content->{path_display}; # Dropbox are case insensitive!
+    }
 
     print "!! enable dry run !!\n" if $dry;
     print "remote_base: $remote_base\n" if $verbose;

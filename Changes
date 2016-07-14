@@ -1,6 +1,7 @@
 Revision history for dropbox-api
 
 {{$NEXT}}
+        - Fix bug `sync dropbox:/ ~/Dropbox/`
 
 2.05 2016-07-12T11:58:23Z
         - Fix bug path_lower has upper case
