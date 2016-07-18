@@ -16,7 +16,7 @@ use Path::Class;
 use POSIX qw();
 use WebService::Dropbox 2.05;
 
-our $VERSION = '2.08';
+our $VERSION = '2.09';
 
 my $limit = 10 * 1024 * 1024; # files_put_chunked method has large file support.
 
@@ -671,9 +671,9 @@ sub sync {
 
         my ($remote_base, $local_base) = ($arg1, $arg2);
         $remote_base = decode('locale_fs', $remote_base);
-        $remote_base =~ s|^dropbox:/|/|;
+        $remote_base =~ s|^dropbox:||;
 
-        if ($remote_base eq '/') {
+        if ($remote_base eq '/' || $remote_base eq '') {
             unless (-d $local_base) {
                 die "missing $local_base";
             }
@@ -697,7 +697,7 @@ sub sync {
 
         my ($local_base, $remote_base) = ($arg1, $arg2);
         $remote_base = decode('locale_fs', $remote_base);
-        $remote_base =~ s|^dropbox:/|/|;
+        $remote_base =~ s|^dropbox:||;
 
         if (-d $local_base) {
             &sync_upload($remote_base, dir(abs_path($local_base)));
