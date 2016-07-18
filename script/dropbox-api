@@ -16,7 +16,7 @@ use Path::Class;
 use POSIX qw();
 use WebService::Dropbox 2.05;
 
-our $VERSION = '2.07';
+our $VERSION = '2.08';
 
 my $limit = 10 * 1024 * 1024; # files_put_chunked method has large file support.
 
@@ -673,15 +673,22 @@ sub sync {
         $remote_base = decode('locale_fs', $remote_base);
         $remote_base =~ s|^dropbox:/|/|;
 
-        my $content = $box->get_metadata(chomp_slash($remote_base)) or die $box->error;
-        if ($content->{'.tag'} eq 'folder') {
+        if ($remote_base eq '/') {
             unless (-d $local_base) {
                 die "missing $local_base";
             }
-            &sync_download($content->{path_display}, dir(abs_path($local_base)));
+            &sync_download('/', dir(abs_path($local_base)));
         } else {
-            $local_base = -d $local_base ? dir(abs_path($local_base)) : -f $local_base ? file(abs_path($local_base)) : file($local_base);
-            &sync_download_file($content, file($local_base));
+            my $content = $box->get_metadata(chomp_slash($remote_base)) or die $box->error;
+            if ($content->{'.tag'} eq 'folder') {
+                unless (-d $local_base) {
+                    die "missing $local_base";
+                }
+                &sync_download($content->{path_display}, dir(abs_path($local_base)));
+            } else {
+                $local_base = -d $local_base ? dir(abs_path($local_base)) : -f $local_base ? file(abs_path($local_base)) : file($local_base);
+                &sync_download_file($content, file($local_base));
+            }
         }
     }
 
