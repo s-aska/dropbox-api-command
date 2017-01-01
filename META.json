@@ -64,7 +64,7 @@
          "web" : "https://github.com/s-aska/dropbox-api-command"
       }
    },
-   "version" : "2.09",
+   "version" : "2.10",
    "x_authority" : "cpan:ASKADNA",
    "x_contributors" : [
       "Sylvain Filteau <cidsphere@gmail.com>",

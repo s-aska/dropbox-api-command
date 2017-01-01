@@ -16,7 +16,7 @@ use Path::Class;
 use POSIX qw();
 use WebService::Dropbox 2.05;
 
-our $VERSION = '2.09';
+our $VERSION = '2.10';
 
 my $limit = 10 * 1024 * 1024; # files_put_chunked method has large file support.
 
@@ -106,7 +106,7 @@ $ENV{NO_PROXY} = $ENV{no_proxy} if !$ENV{NO_PROXY} && $ENV{no_proxy};
 my $box = WebService::Dropbox->new($config);
 $box->env_proxy if $env_proxy;
 
-my $strp = new DateTime::Format::Strptime( pattern => '%Y-%m-%dT%T' );
+my $strp = new DateTime::Format::Strptime( pattern => '%Y-%m-%dT%TZ' );
 
 my $format = {
     i => 'id',
