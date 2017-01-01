@@ -2,6 +2,9 @@ Revision history for dropbox-api
 
 {{$NEXT}}
 
+2.10 2017-01-01T15:58:01Z
+        - Add Z for strformat
+
 2.09 2016-07-18T10:12:03Z
         - Fix bug `sync dropbox: ~/Dropbox`
 
