@@ -2,6 +2,10 @@ Revision history for dropbox-api
 
 {{$NEXT}}
 
+2.11 2017-01-01T18:58:11Z
+        - parse_datetime is %Y-%m-%dT%TZ
+        - format_datetime is %Y-%m-%dT%T
+
 2.10 2017-01-01T15:58:01Z
         - Add Z for strformat
 

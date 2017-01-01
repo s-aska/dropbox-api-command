@@ -16,7 +16,7 @@ use Path::Class;
 use POSIX qw();
 use WebService::Dropbox 2.05;
 
-our $VERSION = '2.10';
+our $VERSION = '2.11';
 
 my $limit = 10 * 1024 * 1024; # files_put_chunked method has large file support.
 
@@ -106,7 +106,8 @@ $ENV{NO_PROXY} = $ENV{no_proxy} if !$ENV{NO_PROXY} && $ENV{no_proxy};
 my $box = WebService::Dropbox->new($config);
 $box->env_proxy if $env_proxy;
 
-my $strp = new DateTime::Format::Strptime( pattern => '%Y-%m-%dT%TZ' );
+my $strp = new DateTime::Format::Strptime( pattern => '%Y-%m-%dT%T' );
+my $strpz = new DateTime::Format::Strptime( pattern => '%Y-%m-%dT%TZ' );
 
 my $format = {
     i => 'id',
@@ -509,7 +510,7 @@ sub _line {
         my $line = eval qq{"$printf"};
         if ($content->{server_modified}) {
             $line=~s/\%T([^\%])/
-                $dt ||= $strp->parse_datetime($content->{server_modified});
+                $dt ||= $strpz->parse_datetime($content->{server_modified});
                 $dt->strftime('%'.$1);
             /egx;
         } else {
@@ -518,7 +519,7 @@ sub _line {
         }
         if ($content->{client_modified}) {
             $line=~s/\%C([^\%])/
-                $ct ||= $strp->parse_datetime($content->{client_modified});
+                $ct ||= $strpz->parse_datetime($content->{client_modified});
                 $ct->strftime('%'.$1);
             /egx;
         } else {
@@ -782,7 +783,7 @@ sub sync_download {
                 if ($box->download($content->{path_display}, $fh)) {
                     printf "download %s\n", decode('locale_fs', $local_path);
                     close($fh);
-                    my $remote_epoch = $strp->parse_datetime($content->{client_modified})->epoch;
+                    my $remote_epoch = $strpz->parse_datetime($content->{client_modified})->epoch;
                     unless (utime($remote_epoch, $remote_epoch, $local_path_tmp)) {
                         warn "set modification time failure " .  decode('locale_fs', $local_path);
                         $exit_code = 1;
@@ -901,7 +902,7 @@ sub sync_download_file {
         if ($box->download($content->{path_display}, $fh)) {
             printf "download %s\n", decode('locale_fs', $local_path);
             close($fh);
-            my $remote_epoch = $strp->parse_datetime($content->{client_modified})->epoch;
+            my $remote_epoch = $strpz->parse_datetime($content->{client_modified})->epoch;
             unless (utime($remote_epoch, $remote_epoch, $local_path_tmp)) {
                 warn "set modification time failure " .  decode('locale_fs', $local_path);
                 $exit_code = 1;
@@ -1112,7 +1113,7 @@ sub sync_upload_file {
 sub has_change ($$) {
     my ($local_path, $content) = @_;
 
-    my $remote_epoch = $strp->parse_datetime($content->{client_modified})->epoch;
+    my $remote_epoch = $strpz->parse_datetime($content->{client_modified})->epoch;
     my $local_epoch = $local_path->stat->mtime;
     my $remote_size = $content->{size};
     my $local_size = $local_path->stat->size;
