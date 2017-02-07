@@ -16,7 +16,7 @@ use Path::Class;
 use POSIX qw();
 use WebService::Dropbox 2.05;
 
-our $VERSION = '2.11';
+our $VERSION = '2.12';
 
 my $limit = 10 * 1024 * 1024; # files_put_chunked method has large file support.
 
@@ -1143,7 +1143,7 @@ sub put {
     my $size = -s $file;
     my $threshold = 10 * 1024 * 1024;
 
-    if ($size < $threshold || !$verbose) {
+    if ($size < $threshold) {
         return $box->upload("$path", $content, $commit_params);
     }
 
@@ -1220,10 +1220,12 @@ sub put {
         }
 
         # ProgressBar
-        my $rate = sprintf('%2.1d%%', $offset / $size * 100);
-        my $bar = '=' x int(($cols - length($rate) - 4) * $offset / $size);
-        my $space = ' ' x ($cols - length($rate) - length($bar) - 4);
-        printf "\r%s [%s>%s]", $rate, $bar, $space;
+        if ($verbose) {
+            my $rate = sprintf('%2.1d%%', $offset / $size * 100);
+            my $bar = '=' x int(($cols - length($rate) - 4) * $offset / $size);
+            my $space = ' ' x ($cols - length($rate) - length($bar) - 4);
+            printf "\r%s [%s>%s]", $rate, $bar, $space;
+        }
 
         $upload->();
     };
