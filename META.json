@@ -4,9 +4,9 @@
       "- Shinichiro Aska"
    ],
    "dynamic_config" : 0,
-   "generated_by" : "Minilla/v3.0.2, CPAN::Meta::Converter version 2.142690",
+   "generated_by" : "Minilla/v3.0.2, CPAN::Meta::Converter version 2.150005",
    "license" : [
-      "mit"
+      "unknown"
    ],
    "meta-spec" : {
       "url" : "http://search.cpan.org/perldoc?CPAN::Meta::Spec",
@@ -47,7 +47,7 @@
             "Encode::UTF8Mac" : "0",
             "JSON" : "0",
             "Path::Class" : "0.26",
-            "WebService::Dropbox" : "2.05",
+            "WebService::Dropbox" : "2.06",
             "perl" : "5.008001"
          }
       }
@@ -64,7 +64,7 @@
          "web" : "https://github.com/s-aska/dropbox-api-command"
       }
    },
-   "version" : "2.12",
+   "version" : "2.13",
    "x_authority" : "cpan:ASKADNA",
    "x_contributors" : [
       "Sylvain Filteau <cidsphere@gmail.com>",
@@ -72,5 +72,6 @@
       "Andrew Childs <lorne@cons.org.nz>",
       "aska <aska@linecorp.com>",
       "Shinichiro Aska <s.aska.org@gmail.com>"
-   ]
+   ],
+   "x_serialization_backend" : "JSON::PP version 2.27300"
 }

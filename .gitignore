@@ -18,3 +18,4 @@ tool
 /App-dropboxapi-*
 local
 cpanfile.snapshot
+.envrc
