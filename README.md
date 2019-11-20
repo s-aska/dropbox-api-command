@@ -33,7 +33,7 @@ dropbox-api is a command line interface to access Dropbox API.
 ### 1-a) FreeBSD
 
 ```
-pkg_add -r dropbox-api-command
+pkg install dropbox-api-command
 ```
 
 ### 1-b) Ubuntu
